@@ -1,7 +1,7 @@
-import React, { useContext, Dispatch, SetStateAction, createRef, useState, useEffect } from "react";
+import React, { useContext, type Dispatch, type SetStateAction, createRef, useState, useEffect } from "react";
 import { IoCloseOutline, IoTrashOutline } from "react-icons/io5";
-import { TranslationKey, Mod, TranslationContext, Language } from "../contexts/TranslationContext";
-import { Button } from "./Button2";
+import { type TranslationKey, type Mod, TranslationContext, Language } from "../contexts/TranslationContext";
+import { Button } from "./ui/transparentButton";
 import { cn } from "~/lib/utils";
 
 const AutoHeightTextArea = (props: {
@@ -19,7 +19,7 @@ const AutoHeightTextArea = (props: {
     if (!element) return;
 
     element.style.height = defaultHeight;
-    const newHeight = element.scrollHeight + "px";
+    const newHeight = `${element.scrollHeight}px`;
     element.style.height = newHeight;
   }
 
@@ -66,7 +66,7 @@ const AutoHeightTextArea = (props: {
   );
 };
 
-const TranslationRow = (props: { tKey: TranslationKey; index: number; mod: Mod; removeKey: Function }) => {
+const TranslationRow = (props: { tKey: TranslationKey; index: number; mod: Mod; removeKey: { (): void } }) => {
   const { tKey: key, index, mod, removeKey } = props;
   const { currentLanguage } = useContext(TranslationContext);
 
@@ -155,7 +155,7 @@ const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateActi
   const { page, setPage, buttonCount } = props;
   return (
     <div className="flex flex-row flex-wrap ">
-      {[...Array(buttonCount)].map((x, i) => (
+      {[...(Array(buttonCount) as void[])].map((_, i) => (
         <button
           key={i}
           className={cn(
@@ -205,7 +205,7 @@ const TranslationTableControls = (props: { array: [string, TranslationKey][] }) 
         <div className="grid w-[1200px] grid-flow-row grid-cols-[36px_3fr_4fr] border-t-[1px] border-[hsl(var(--border))]">
           {array.slice(from, to).map(([hash, key], index) => (
             <TranslationRow
-              key={hash + currentLanguage}
+              key={`${hash}${currentLanguage}`}
               tKey={key}
               index={index + from + 1}
               mod={currentMod}

@@ -63,8 +63,9 @@ export function compileTranslations(mod: Mod) {
         if (!defTextMap.has(key.defType)) defTextMap.set(key.defType, langDataStart);
         defTextMap.set(
           key.defType,
-          defTextMap.get(key.defType) +
-            `\t<${key.defName}${key.key}>${key.values[0]!.replaceAll("\n", "\\n")}</${key.defName}${key.key}>\n`
+          `${defTextMap.get(key.defType)!}\t<${key.defName}${key.key}>${key.values[0]!.replaceAll("\n", "\\n")}</${
+            key.defName
+          }${key.key}>\n`
         );
       }
     }
@@ -75,7 +76,7 @@ export function compileTranslations(mod: Mod) {
     }
   }
 
-  zip.generateAsync({ type: "blob" }).then(function (content) {
+  void zip.generateAsync({ type: "blob" }).then(function (content) {
     saveAs(content, `${mod.name}_translation.zip`);
   });
 }

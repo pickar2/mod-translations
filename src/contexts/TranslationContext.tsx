@@ -27,7 +27,7 @@ export type FieldWithSetter<T> = {
 };
 
 export const TranslationContext = createContext<{
-  updateOnTrigger: {};
+  updateOnTrigger: unknown;
   triggerUpdate: { (): void };
   mods: Mod[];
   setMods: Dispatch<SetStateAction<Mod[]>>;
@@ -42,7 +42,7 @@ export const TranslationContext = createContext<{
 }>(null!);
 
 export const TranslationContextInit = (props: { children: JSX.Element | JSX.Element[] }) => {
-  const [updateOnTrigger, setUpdateOnTrigger] = useState<{}>({});
+  const [updateOnTrigger, setUpdateOnTrigger] = useState<unknown>({});
   const [mods, setMods] = useState<Mod[]>([]);
   const [currentMod, setCurrentMod] = useState<Mod | undefined>();
   const [currentLanguage, setCurrentLanguage] = useState<Language>(Language.English);

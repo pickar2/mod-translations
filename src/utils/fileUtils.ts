@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Language, Mod } from "~/contexts/TranslationContext";
 import { XmlParser } from "./xmlUtils";
 import semver from "semver";
@@ -60,12 +63,14 @@ export async function parseRimworldModDirectory(mod: Mod, directory: Directory, 
         const versions = keys.map((s) => ({ name: s, version: semver.coerce(s) })).filter((v) => v.version != null);
         versions.sort((a, b) => semver.compareBuild(b.version!, a.version!));
 
-        const toLoad: string[] = (loadFolders[versions[0]?.name!].li as any[]).map((a) => a.toString());
+        const first = versions[0]?.name ?? "1.0";
+
+        const toLoad: string[] = (loadFolders[first].li as object[]).map((a) => a.toString());
         foldersWithDefs.push(...directory.directories.filter((d) => toLoad.includes(d.name)));
 
         parsed = true;
       } else if (xml.loadFolders[version]?.li) {
-        const toLoad: string[] = (loadFolders[version].li as any[]).map((a) => a.toString());
+        const toLoad: string[] = (loadFolders[version].li as object[]).map((a) => a.toString());
         foldersWithDefs.push(...directory.directories.filter((d) => toLoad.includes(d.name)));
 
         parsed = true;

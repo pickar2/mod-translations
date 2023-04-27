@@ -1,4 +1,7 @@
-export const Button = (props: { onClick: React.MouseEventHandler<HTMLButtonElement>; children: any }) => {
+"use client";
+import * as React from "react";
+
+export const Button = (props: { onClick: React.MouseEventHandler<HTMLButtonElement>; children: React.ReactNode }) => {
   const { onClick, children } = props;
   return (
     <button
