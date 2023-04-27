@@ -47,9 +47,9 @@ export function compileTranslations(mod: Mod) {
     const langName: string = Language[language];
     const langFolder = languagesFolder.folder(langName)!;
     const defInjectedFolder = langFolder.folder("DefInjected")!;
-    const keyedFolder = langFolder.folder("Keyed")!;
 
     let keyed = langDataStart;
+    let hasKeyed = false;
     const defTextMap = new Map<string, string>();
     for (const [hash, key] of keyMap) {
       if (key.values.length != 1) continue;
@@ -58,6 +58,7 @@ export function compileTranslations(mod: Mod) {
 
       if (key.defType === "Keyed" && key.defName === "") {
         keyed += `\t<${key.key}>${key.values[0]!.replaceAll("\n", "\\n")}</${key.key}>\n`;
+        hasKeyed = true;
       } else {
         if (!defTextMap.has(key.defType)) defTextMap.set(key.defType, langDataStart);
         defTextMap.set(
@@ -68,7 +69,7 @@ export function compileTranslations(mod: Mod) {
       }
     }
 
-    keyedFolder.file("Keys.xml", keyed + langDataEnd);
+    if (hasKeyed) langFolder.folder("Keyed")!.file("Keys.xml", keyed + langDataEnd);
     for (const [key, value] of defTextMap) {
       defInjectedFolder.file(`${key}.xml`, value + langDataEnd);
     }
