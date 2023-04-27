@@ -1,7 +1,7 @@
 import React, { useContext, Dispatch, SetStateAction, createRef, useState, useEffect } from "react";
 import { IoCloseOutline, IoTrashOutline } from "react-icons/io5";
 import { TranslationKey, Mod, TranslationContext, Language } from "../contexts/TranslationContext";
-import { Button } from "./Button";
+import { Button } from "./Button2";
 import { cn } from "~/lib/utils";
 
 const AutoHeightTextArea = (props: {
@@ -31,8 +31,8 @@ const AutoHeightTextArea = (props: {
   return (
     <div
       className={cn(
-        "w-full border-l-2 border-r-2 border-red-600",
-        index != values.length - 1 && "border-b-2",
+        "w-full border-l-[1px] border-r-[1px] border-[hsl(var(--border))]",
+        index != values.length - 1 && "border-b-[1px]",
         editingIndex == index && "border-x-slate-200"
       )}
     >
@@ -92,7 +92,7 @@ const TranslationRow = (props: { tKey: TranslationKey; index: number; mod: Mod; 
     <>
       <div
         className={cn(
-          "flex items-center justify-center border-b-2 border-l-2 border-red-600",
+          "flex items-center justify-center border-b-[1px] border-l-[1px] border-[hsl(var(--border))]",
           invalid() && "border-l-blue-600",
           changedFromDefault && "border-l-green-600"
         )}
@@ -100,7 +100,7 @@ const TranslationRow = (props: { tKey: TranslationKey; index: number; mod: Mod; 
         <span className="p-1">{index}</span>
       </div>
 
-      <div className="flex items-center border-b-2 border-b-red-600">
+      <div className="flex items-center border-b-[1px] border-[hsl(var(--border))]">
         <span className="text-sm text-slate-500">{key.defType}:</span>
         <span>
           {key.defName}
@@ -108,7 +108,7 @@ const TranslationRow = (props: { tKey: TranslationKey; index: number; mod: Mod; 
         </span>
       </div>
 
-      <div className="flex flex-row border-b-2 border-red-600">
+      <div className="flex flex-row border-b-[1px] border-[hsl(var(--border))]">
         <div className="grid w-full grid-flow-row grid-cols-[34px_1fr]">
           {values.map((v, i) => {
             return (
@@ -159,11 +159,10 @@ const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateActi
         <button
           key={i}
           className={cn(
-            `mb-1 mr-1 flex w-8 cursor-pointer select-none items-center justify-center border-2 border-red-600
+            `mb-1 mr-1 flex w-8 cursor-pointer select-none items-center justify-center border-[1px] border-[hsl(var(--border))]
              bg-slate-900 px-2 py-1 text-slate-50 outline-none transition-colors hover:bg-slate-800 focus:bg-slate-800`,
             page == i && "border-b-slate-200"
           )}
-          tabIndex={0}
           onClick={(e) => {
             setPage(i);
             window.scrollTo(0, 0);
@@ -203,7 +202,7 @@ const TranslationTableControls = (props: { array: [string, TranslationKey][] }) 
         <span>
           {currentMod.name} @ {Language[currentLanguage]}
         </span>
-        <div className="grid w-[1200px] grid-flow-row grid-cols-[36px_3fr_4fr] border-t-2 border-red-600">
+        <div className="grid w-[1200px] grid-flow-row grid-cols-[36px_3fr_4fr] border-t-[1px] border-[hsl(var(--border))]">
           {array.slice(from, to).map(([hash, key], index) => (
             <TranslationRow
               key={hash + currentLanguage}

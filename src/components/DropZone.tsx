@@ -9,6 +9,7 @@ import {
 } from "~/utils/fileUtils";
 import { findDefs, findAllTranslatableKeys, XmlParser } from "~/utils/xmlUtils";
 import { Language, Mod, TranslationContext, TranslationKey } from "../contexts/TranslationContext";
+import { cn } from "~/lib/utils";
 
 export const verifyZoneOnFileDrop = (event: any) => {
   if (event.target.matches(".dropzone")) {
@@ -27,35 +28,18 @@ const Loading = () => {
 export const DropZone = () => {
   const { mods, currentMod, addMod, addTranslation, triggerUpdate, currentLanguage } = useContext(TranslationContext);
   const [dropping, setDropping] = useState(false);
-  const bgColor = !dropping ? "bg-slate-300" : "darkened";
-  const animated = dropping ? "" : "";
   const [loading, setLoading] = useState(false);
-
-  // useEffect(() => {
-  //   const dummyMod = addMod("DummyMod", "Dummy.ModId", Language.English);
-
-  //   addTranslation(dummyMod, Language.English, "some/path/File.xml", "DefDummyOne.label", ["Dummy label one"]);
-  //   addTranslation(dummyMod, Language.Russian, "some/path/File.xml", "DefDummyOne.label", [
-  //     "Пустышка с названием одинПустышка с названием одинПустышка с названием одинПустышка с названием одинПустышка с названием одинПустышка с названием одинПустышка с названием одинПустышка с названием одинПустышка с названием одинПустышка с названием одинПустышка с названием один",
-  //   ]);
-  //   addTranslation(dummyMod, Language.Russian, "some/path/File.xml", "DefDummyOne.label", ["Первая пустышка"]);
-
-  //   addTranslation(dummyMod, Language.English, "some/path/File.xml", "DefDummySecond.label", [
-  //     "Dummy label second",
-  //     "Other text",
-  //   ]);
-
-  //   addTranslation(dummyMod, Language.English, "some/path/OtherFile.xml", "DefDummyOtherFile.label", [
-  //     "Label in other file",
-  //   ]);
-  // }, []);
 
   return (
     <>
       {loading && <Loading />}
-      <div className={`flex items-center rounded-[18px] border-2 border-purple-200 p-0 ${animated}`}>
+      <div className={`flex items-center p-0`}>
         <div
-          className={`flex items-center rounded-2xl border-2 border-purple-600 ${bgColor} dropzone p-14`}
+          className={cn(
+            `dropzone flex items-center rounded-2xl border-[1px] border-[hsl(var(--border))] bg-slate-800 p-14`,
+            "after:content-['Drop_files_here']",
+            dropping && "bg-slate-700"
+          )}
           onDragOver={(e) => {
             e.preventDefault();
             setDropping(true);

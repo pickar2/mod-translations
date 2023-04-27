@@ -40,17 +40,16 @@ const Home: NextPage = () => {
         <title>Community translations</title>
         <meta name="description" content="Community translations" />
         <link rel="icon" href="/favicon.ico" />
-        {/* <body className="dark" /> */}
       </Head>
       <TranslationContextInit>
+        <Header />
         <main
-          className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]"
+          className="flex min-h-screen flex-col items-center justify-center bg-slate-900"
           onDragStart={verifyZoneOnFileDrop}
           onDragOver={verifyZoneOnFileDrop}
           onDrop={verifyZoneOnFileDrop}
         >
-          <Header />
-          <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
+          <div className="container mt-8 flex flex-col items-center justify-center gap-12 px-4 py-16">
             <DropZone />
             <TranslationTable />
             {/* <div className="flex flex-col items-center gap-2">

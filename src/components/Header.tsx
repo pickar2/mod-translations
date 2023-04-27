@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { keysOfEnum } from "~/utils/enumUtils";
 import { TranslationContext, Language, TranslationKey } from "../contexts/TranslationContext";
-import { Button } from "./Button";
+import { Button } from "./ui/button";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select";
 import { cn } from "~/lib/utils";
 import { compileTranslations } from "~/utils/zipUtils";
@@ -34,14 +34,11 @@ export const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 flex w-full flex-row border-b-4 border-red-600 bg-slate-300 p-3">
+    <header className="fixed top-0 flex w-full flex-row gap-2 border-b-[1px] border-[hsl(var(--border))] bg-slate-900 p-3">
       <Button onClick={copyNotTranslated}>[ Copy ]</Button>
       <Button
         onClick={(e): void => {
           if (!currentMod) return;
-          // const keys = currentMod.keys.get(currentLanguage);
-          // if (!keys) return;
-
           compileTranslations(currentMod);
         }}
       >
@@ -54,7 +51,7 @@ export const Header = () => {
           setCurrentLanguage(() => Language[keysOfEnum(Language).find((k) => k.toString() === v)!]);
         }}
       >
-        <SelectTrigger className={cn("w-[180px]")}>
+        <SelectTrigger className={cn("w-auto min-w-[180px]")}>
           <SelectValue placeholder="Choose language" />
         </SelectTrigger>
         <SelectContent>
@@ -77,7 +74,7 @@ export const Header = () => {
           setCurrentMod(mod);
         }}
       >
-        <SelectTrigger className={cn("w-[180px]")}>
+        <SelectTrigger className={cn("w-auto min-w-[180px]")}>
           <SelectValue placeholder="Select a mod" />
         </SelectTrigger>
         <SelectContent>
