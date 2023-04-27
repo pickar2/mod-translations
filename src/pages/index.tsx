@@ -1,17 +1,38 @@
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectLabel,
+  SelectItem,
+} from "~/components/ui/select";
 import { type NextPage } from "next";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Head from "next/head";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { verifyZoneOnFileDrop, DropZone } from "~/components/DropZone";
+import { Header } from "~/components/Header";
+import { TranslationTable } from "~/components/TranslationTable";
+import { TranslationContextInit } from "~/contexts/TranslationContext";
+import { cn } from "~/lib/utils";
 import { api } from "~/utils/api";
-
-import { verifyZoneOnFileDrop, DropZone } from "./components/DropZone";
-import { TranslationContextInit } from "./contexts/TranslationContext";
-import { Header } from "./components/Header";
-import { NewTranslationTable as TranslationTable } from "./components/TranslationTable";
 
 const Home: NextPage = () => {
   // const hello = api.example.hello.useQuery({ text: "from tRPC" });
+
+  // if (localStorage.theme === "dark" ||
+  //   (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)
+  // ) {
+  //   document.documentElement.classList.add("dark");
+  // } else {
+  //   document.documentElement.classList.remove("dark");
+  // }
+
+  // useEffect(() => {
+  //   document.documentElement.classList.add("dark");
+  // }, []);
 
   return (
     <>
@@ -19,16 +40,17 @@ const Home: NextPage = () => {
         <title>Community translations</title>
         <meta name="description" content="Community translations" />
         <link rel="icon" href="/favicon.ico" />
+        {/* <body className="dark" /> */}
       </Head>
       <TranslationContextInit>
-        <Header />
         <main
           className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]"
           onDragStart={verifyZoneOnFileDrop}
           onDragOver={verifyZoneOnFileDrop}
           onDrop={verifyZoneOnFileDrop}
         >
-          <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
+          <Header />
+          <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
             <DropZone />
             <TranslationTable />
             {/* <div className="flex flex-col items-center gap-2">

@@ -1,7 +1,8 @@
 import React, { useContext, Dispatch, SetStateAction, createRef, useState, useEffect } from "react";
-import { IoTrashOutline } from "react-icons/io5";
+import { IoCloseOutline, IoTrashOutline } from "react-icons/io5";
 import { TranslationKey, Mod, TranslationContext, Language } from "../contexts/TranslationContext";
 import { Button } from "./Button";
+import { cn } from "~/lib/utils";
 
 const AutoHeightTextArea = (props: {
   index: number;
@@ -29,10 +30,11 @@ const AutoHeightTextArea = (props: {
 
   return (
     <div
-      className={`w-full border-l-2 border-r-2 border-red-600 
-      ${index != values.length - 1 && "border-b-2 "} 
-      ${editingIndex == index && "border-x-slate-200 "}
-      `}
+      className={cn(
+        "w-full border-l-2 border-r-2 border-red-600",
+        index != values.length - 1 && "border-b-2",
+        editingIndex == index && "border-x-slate-200"
+      )}
     >
       <textarea
         ref={textAreaRef}
@@ -64,8 +66,8 @@ const AutoHeightTextArea = (props: {
   );
 };
 
-const TranslationRow = (props: { tKey: TranslationKey; index: number; mod: Mod }) => {
-  const { tKey: key, index, mod } = props;
+const TranslationRow = (props: { tKey: TranslationKey; index: number; mod: Mod; removeKey: Function }) => {
+  const { tKey: key, index, mod, removeKey } = props;
   const { currentLanguage } = useContext(TranslationContext);
 
   const [values, setValues] = useState<string[]>(key.values);
@@ -75,7 +77,7 @@ const TranslationRow = (props: { tKey: TranslationKey; index: number; mod: Mod }
 
   const invalid = () => values.length > 1;
   const isChangedFromDefault = (currentValue: string | undefined) => {
-    const defaultValue = mod.keys.get(mod.defaultLanguage)!.get(key.path + key.key)?.values[0];
+    const defaultValue = mod.keys.get(mod.defaultLanguage)!.get(key.defType + key.defName + key.key)?.values[0];
     return !(currentLanguage == mod.defaultLanguage) && !invalid() && currentValue !== defaultValue;
   };
 
@@ -89,26 +91,34 @@ const TranslationRow = (props: { tKey: TranslationKey; index: number; mod: Mod }
   return (
     <>
       <div
-        className={`flex items-center justify-center border-b-2 border-l-2 border-red-600 
-        ${invalid() && "border-l-blue-600 "}
-        ${changedFromDefault && "border-l-green-600 "}
-        `}
+        className={cn(
+          "flex items-center justify-center border-b-2 border-l-2 border-red-600",
+          invalid() && "border-l-blue-600",
+          changedFromDefault && "border-l-green-600"
+        )}
       >
         <span className="p-1">{index}</span>
       </div>
 
       <div className="flex items-center border-b-2 border-b-red-600">
-        <span className="text-sm text-slate-500">{key.path}:</span>
-        <span>{key.key}</span>
+        <span className="text-sm text-slate-500">{key.defType}:</span>
+        <span>
+          {key.defName}
+          {key.key}
+        </span>
       </div>
 
       <div className="flex flex-row border-b-2 border-red-600">
         <div className="grid w-full grid-flow-row grid-cols-[34px_1fr]">
           {values.map((v, i) => {
             return (
-              // @ts-expect-error
               <React.Fragment key={v}>
                 <div className="flex items-center">
+                  {values.length == 1 && (
+                    <Button onClick={(e) => removeKey()}>
+                      <IoCloseOutline />
+                    </Button>
+                  )}
                   {values.length > 1 && (
                     <Button
                       onClick={(e) => {
@@ -146,85 +156,78 @@ const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateActi
   return (
     <div className="flex flex-row flex-wrap ">
       {[...Array(buttonCount)].map((x, i) => (
-        <div
-          // @ts-expect-error
+        <button
           key={i}
-          className={`mb-1 mr-1 flex w-8 cursor-pointer select-none items-center justify-center border-2 border-red-600 bg-slate-900 px-2 py-1 text-slate-50 transition-colors hover:bg-slate-800
-        ${page == i && "border-b-slate-200"}`}
+          className={cn(
+            `mb-1 mr-1 flex w-8 cursor-pointer select-none items-center justify-center border-2 border-red-600
+             bg-slate-900 px-2 py-1 text-slate-50 outline-none transition-colors hover:bg-slate-800 focus:bg-slate-800`,
+            page == i && "border-b-slate-200"
+          )}
           tabIndex={0}
-          onClick={() => setPage(i)}
+          onClick={(e) => {
+            setPage(i);
+            window.scrollTo(0, 0);
+          }}
         >
           {i + 1}
-        </div>
+        </button>
       ))}
     </div>
   );
 };
 
-export const NewTranslationTable = () => {
-  const { currentMod, currentLanguage } = useContext(TranslationContext);
+const TranslationTableControls = (props: { array: [string, TranslationKey][] }) => {
+  const { currentMod, currentLanguage, updateOnTrigger, triggerUpdate } = useContext(TranslationContext);
+  const { array } = props;
   const [page, setPage] = useState(0);
 
   const keysPerPage = 50;
+  const from = page * keysPerPage;
+  const to = (page + 1) * keysPerPage;
 
-  // TODO: when pairs per page change, set new page so first entry is same as before, or at least on the same page
   useEffect(() => {
     if (!currentMod) return;
-    setPage((p) => Math.max(Math.min(p, Math.floor(currentMod.keys.get(currentLanguage)!.size / keysPerPage)), 0));
-  }, [currentMod, page]);
+    const lang = currentMod.keys.get(currentLanguage);
+    if (!lang) return;
 
-  const copyNotTranslated = () => {
-    if (!currentMod || currentLanguage == currentMod.defaultLanguage) return;
-    if (!currentMod.keys.has(currentLanguage)) currentMod.keys.set(currentLanguage, new Map());
-
-    const defaultKeys = currentMod.keys.get(currentMod.defaultLanguage);
-    if (!defaultKeys) return;
-
-    const currentKeys = currentMod.keys.get(currentLanguage)!;
-    for (const [hash, key] of defaultKeys) {
-      if (currentKeys.has(hash)) continue;
-
-      const copy: TranslationKey = { key: key.key, path: key.path, values: [...key.values] };
-      currentKeys.set(hash, copy);
-    }
-  };
-  copyNotTranslated();
-
-  useEffect(copyNotTranslated, [currentLanguage]);
+    setPage((p) => Math.max(Math.min(p, Math.floor(lang.size / keysPerPage)), 0));
+  }, [currentMod, currentLanguage, page]);
 
   if (!currentMod) return <></>;
+  const languageKeys = currentMod.keys.get(currentLanguage)!;
   return (
     <>
-      <PaginationButtons
-        page={page}
-        setPage={setPage}
-        buttonCount={Math.ceil(currentMod.keys.get(currentLanguage)!.size / keysPerPage)}
-      />
+      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(languageKeys.size / keysPerPage)} />
 
       <div className="flex flex-col content-center items-center bg-slate-900 text-slate-50">
         <span>
           {currentMod.name} @ {Language[currentLanguage]}
         </span>
         <div className="grid w-[1200px] grid-flow-row grid-cols-[36px_3fr_4fr] border-t-2 border-red-600">
-          {Array.from(currentMod.keys.get(currentLanguage)!)
-            .slice(page * keysPerPage, (page + 1) * keysPerPage)
-            .map((key, index) => (
-              <TranslationRow
-                // @ts-expect-error
-                key={key[0] + currentLanguage}
-                tKey={key[1]}
-                index={index + page * keysPerPage + 1}
-                mod={currentMod}
-              />
-            ))}
+          {array.slice(from, to).map(([hash, key], index) => (
+            <TranslationRow
+              key={hash + currentLanguage}
+              tKey={key}
+              index={index + from + 1}
+              mod={currentMod}
+              removeKey={() => {
+                languageKeys.delete(hash);
+                triggerUpdate();
+              }}
+            />
+          ))}
         </div>
       </div>
 
-      <PaginationButtons
-        page={page}
-        setPage={setPage}
-        buttonCount={Math.ceil(currentMod.keys.get(currentLanguage)!.size / keysPerPage)}
-      />
+      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(languageKeys.size / keysPerPage)} />
     </>
   );
+};
+
+export const TranslationTable = () => {
+  const { currentMod, currentLanguage } = useContext(TranslationContext);
+  if (!currentMod || !currentMod.keys.has(currentLanguage)) return <></>;
+
+  const arr = Array.from(currentMod.keys.get(currentLanguage)!);
+  return <TranslationTableControls array={arr} />;
 };
