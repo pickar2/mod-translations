@@ -145,7 +145,7 @@ const TranslationRow = (props: {
           <div className="mt-1 flex items-start">
             <TooltipProvider delayDuration={400}>
               <Tooltip>
-                <TooltipTrigger tabIndex={-1} className="">
+                <TooltipTrigger tabIndex={-1} asChild>
                   <Button
                     onClick={() => {
                       setShowingDefault((prev) => !prev);
@@ -167,11 +167,10 @@ const TranslationRow = (props: {
         )}
 
         <div className="flex w-full">
-          {/* {(values.length == 1 || showingDefault) && ( */}
           <div className="mt-1 flex flex-col items-start">
             <TooltipProvider delayDuration={400}>
               <Tooltip>
-                <TooltipTrigger tabIndex={-1}>
+                <TooltipTrigger tabIndex={-1} asChild>
                   <Button
                     onClick={removeKey}
                     onMouseEnter={() => {
@@ -196,7 +195,6 @@ const TranslationRow = (props: {
               </Tooltip>
             </TooltipProvider>
           </div>
-          {/* )} */}
           {showingDefault && (
             <span className={cn("border-[hsl(var(--border)] w-full border-x-[1px] p-2")}>{defaultKey.values[0]}</span>
           )}
@@ -204,7 +202,14 @@ const TranslationRow = (props: {
             <div className="flex w-full flex-col">
               {values.map((v, i) => {
                 return (
-                  <div key={v} className={cn("relative", values.length > 1 && `min-h-[${i == 0 ? 65 : 64}px]`)}>
+                  <div
+                    key={v}
+                    className={cn(
+                      "relative",
+                      values.length > 1 && i == 0 && `min-h-[65px]`,
+                      values.length > 1 && i !== 0 && `min-h-[64px]`
+                    )}
+                  >
                     <div
                       className={cn(
                         "pointer-events-none absolute h-full w-full bg-red-800 opacity-0",
@@ -215,7 +220,7 @@ const TranslationRow = (props: {
                       <div className="absolute bottom-0 left-[-32px]">
                         <TooltipProvider delayDuration={400}>
                           <Tooltip>
-                            <TooltipTrigger tabIndex={-1}>
+                            <TooltipTrigger tabIndex={-1} asChild>
                               <Button
                                 onClick={() => {
                                   setValues((prev) => {
