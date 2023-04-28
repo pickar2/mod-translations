@@ -1,4 +1,4 @@
-import { Children, createContext, Dispatch, SetStateAction, useEffect, useState } from "react";
+import { createContext, type Dispatch, type SetStateAction, useState } from "react";
 import { keysOfEnum } from "~/utils/enumUtils";
 
 export enum Language {
@@ -55,6 +55,7 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
       const map = new Map<Language, Map<string, TranslationKey>>();
       keysOfEnum(Language).map((k) => map.set(Language[k], new Map()));
       mod = { name, id, defaultLanguage, keys: map };
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       setMods((prev) => [...prev, mod!]);
     }
     setCurrentMod(mod);
@@ -71,6 +72,7 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
     values: string[]
   ): void => {
     if (!mod.keys.has(language)) mod.keys.set(language, new Map());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const languageKeys = mod.keys.get(language)!;
 
     const translationKey = languageKeys.get(defType + defName + key);

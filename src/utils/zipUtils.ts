@@ -1,4 +1,4 @@
-import { Language, Mod, TranslationKey } from "~/contexts/TranslationContext";
+import { Language, type Mod, TranslationKey } from "~/contexts/TranslationContext";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 

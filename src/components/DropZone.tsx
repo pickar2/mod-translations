@@ -1,15 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { DragEventHandler, useContext, useEffect, useState } from "react";
-import {
-  getAllFileEntries,
-  fileAsPromise,
-  parseFiles,
-  type Directory,
-  findRimworldMods,
-  parseRimworldModDirectory,
-} from "~/utils/fileUtils";
+import { useContext, useState } from "react";
+import { parseFiles, type Directory, findRimworldMods, parseRimworldModDirectory } from "~/utils/fileUtils";
 import { findDefs, findAllTranslatableKeys, XmlParser } from "~/utils/xmlUtils";
 import { Language, type Mod, TranslationContext, type TranslationKey } from "../contexts/TranslationContext";
 import { cn } from "~/lib/utils";
@@ -29,7 +22,7 @@ const Loading = () => {
 };
 
 export const DropZone = () => {
-  const { mods, currentMod, addMod, addTranslation, triggerUpdate, currentLanguage } = useContext(TranslationContext);
+  const { mods, addMod, addTranslation, triggerUpdate } = useContext(TranslationContext);
   const [dropping, setDropping] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -40,9 +33,7 @@ export const DropZone = () => {
     setLoading(true);
 
     const root: Directory = await parseFiles(e.dataTransfer.items);
-    // console.log(root);
     const modDirectories = await findRimworldMods(root, "default");
-    // console.log(mods);
     const modsWithDir: { mod: Mod; directory: Directory }[] = modDirectories.map((mDir) => {
       let mod = mods.find((m) => m.id === mDir.modId);
       if (!mod) mod = addMod(mDir.modId, mDir.modId, Language.English);
@@ -161,7 +152,7 @@ export const DropZone = () => {
         <div
           className={cn(
             `dropzone flex items-center rounded-2xl border-[1px] border-[hsl(var(--border))] bg-slate-800 p-14`,
-            "after:content-['Drop_files_here']",
+            "after:content-['Drop_mod_folder(s)_here']",
             dropping && "bg-slate-700"
           )}
           onDragOver={(e) => {

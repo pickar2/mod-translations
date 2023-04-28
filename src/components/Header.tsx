@@ -1,8 +1,8 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import { keysOfEnum } from "~/utils/enumUtils";
-import { TranslationContext, Language, TranslationKey } from "../contexts/TranslationContext";
+import { TranslationContext, Language, type TranslationKey } from "../contexts/TranslationContext";
 import { Button } from "./ui/button";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { cn } from "~/lib/utils";
 import { compileTranslations } from "~/utils/zipUtils";
 
@@ -17,6 +17,7 @@ export const Header = () => {
     const defaultKeys = currentMod.keys.get(currentMod.defaultLanguage);
     if (!defaultKeys) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const currentKeys = currentMod.keys.get(currentLanguage)!;
     for (const [hash, key] of defaultKeys) {
       if (key.values.length !== 1 || currentKeys.has(hash)) continue;
@@ -37,7 +38,7 @@ export const Header = () => {
     <header className="fixed top-0 flex w-full flex-row gap-2 border-b-[1px] border-[hsl(var(--border))] bg-slate-900 p-3">
       <Button onClick={copyNotTranslated}>[ Copy ]</Button>
       <Button
-        onClick={(e): void => {
+        onClick={(): void => {
           if (!currentMod) return;
           compileTranslations(currentMod);
         }}
@@ -48,7 +49,7 @@ export const Header = () => {
       <Select
         value={Language[currentLanguage]}
         onValueChange={(v) => {
-          setCurrentLanguage(() => Language[keysOfEnum(Language).find((k) => k.toString() === v)!]);
+          setCurrentLanguage(() => Language[v as keyof typeof Language] as Language);
         }}
       >
         <SelectTrigger className={cn("w-auto min-w-[180px]")}>
