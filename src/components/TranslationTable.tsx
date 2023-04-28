@@ -1,7 +1,7 @@
 import React, { useContext, type Dispatch, type SetStateAction, createRef, useState, useEffect } from "react";
 import { type TranslationKey, type Mod, TranslationContext, Language } from "../contexts/TranslationContext";
 import { Button } from "./ui/transparentButton";
-import { Eye, EyeOff, X, Trash2, BookTemplate, Book } from "lucide-react";
+import { X, Trash2, BookTemplate, Book } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
@@ -123,7 +123,7 @@ const TranslationRow = (props: {
           <div className="flex items-center">
             <TooltipProvider delayDuration={400}>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger tabIndex={-1}>
                   <Button
                     onClick={() => {
                       setShowingDefault((prev) => !prev);
@@ -149,7 +149,7 @@ const TranslationRow = (props: {
             <div className="flex items-center">
               <TooltipProvider delayDuration={400}>
                 <Tooltip>
-                  <TooltipTrigger>
+                  <TooltipTrigger tabIndex={-1}>
                     <Button onClick={removeKey}>
                       <X />
                     </Button>
@@ -172,7 +172,7 @@ const TranslationRow = (props: {
                     <div className="flex items-center">
                       <TooltipProvider delayDuration={400}>
                         <Tooltip>
-                          <TooltipTrigger>
+                          <TooltipTrigger tabIndex={-1}>
                             <Button
                               onClick={() => {
                                 setValues((prev) => {
@@ -243,7 +243,7 @@ const TranslationTableControls = (props: {
   const { mod, langMap, defaultLangMap } = props;
   const [page, setPage] = useState(0);
 
-  const keysPerPage = 50;
+  const keysPerPage = 25;
   const from = page * keysPerPage;
   const to = (page + 1) * keysPerPage;
 
@@ -259,8 +259,8 @@ const TranslationTableControls = (props: {
     if (i >= from) {
       array[index++] = entry;
     }
-    if (i >= to) break;
     i++;
+    if (i >= to) break;
   }
 
   return (

@@ -39,7 +39,7 @@ export const Header = () => {
     <header className="fixed top-0 flex w-full flex-row gap-2 border-b-[1px] border-[hsl(var(--border))] bg-slate-900 p-3">
       <TooltipProvider delayDuration={400}>
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger asChild>
             <Button onClick={copyNotTranslated}>[ Copy ]</Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" align="start">
@@ -50,7 +50,7 @@ export const Header = () => {
 
       <TooltipProvider delayDuration={400}>
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger asChild>
             <Button
               onClick={(): void => {
                 if (!currentMod) return;
