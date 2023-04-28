@@ -3,6 +3,7 @@ import { type TranslationKey, type Mod, TranslationContext, Language } from "../
 import { Button } from "./ui/transparentButton";
 import { Eye, EyeOff, X, Trash2, BookTemplate, Book } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 const AutoHeightTextArea = (props: {
   index: number;
@@ -120,23 +121,44 @@ const TranslationRow = (props: {
       <div className="flex flex-row border-b-[1px] border-[hsl(var(--border))]">
         {currentLanguage != mod.defaultLanguage && (
           <div className="flex items-center">
-            <Button
-              onClick={() => {
-                setShowingDefault((prev) => !prev);
-              }}
-            >
-              {!showingDefault && <BookTemplate />}
-              {showingDefault && <Book />}
-            </Button>
+            <TooltipProvider delayDuration={400}>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    onClick={() => {
+                      setShowingDefault((prev) => !prev);
+                    }}
+                  >
+                    {!showingDefault && <BookTemplate />}
+                    {showingDefault && <Book />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>
+                    {!showingDefault && "Show template text"}
+                    {showingDefault && "Show translation"}
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         )}
 
         <div className="grid w-full grid-flow-row grid-cols-[34px_1fr]">
           {(values.length == 1 || showingDefault) && (
             <div className="flex items-center">
-              <Button onClick={removeKey}>
-                <X />
-              </Button>
+              <TooltipProvider delayDuration={400}>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Button onClick={removeKey}>
+                      <X />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>Remove key</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           )}
           {showingDefault && (
@@ -148,16 +170,25 @@ const TranslationRow = (props: {
                 <React.Fragment key={v}>
                   {values.length > 1 && (
                     <div className="flex items-center">
-                      <Button
-                        onClick={() => {
-                          setValues((prev) => {
-                            prev.splice(i, 1);
-                            return [...prev];
-                          });
-                        }}
-                      >
-                        <Trash2 />
-                      </Button>
+                      <TooltipProvider delayDuration={400}>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Button
+                              onClick={() => {
+                                setValues((prev) => {
+                                  prev.splice(i, 1);
+                                  return [...prev];
+                                });
+                              }}
+                            >
+                              <Trash2 />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <span>Remove item</span>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   )}
                   <AutoHeightTextArea

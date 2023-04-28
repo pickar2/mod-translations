@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { cn } from "~/lib/utils";
 import { compileTranslations } from "~/utils/zipUtils";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
 
 export const Header = () => {
   const { setCurrentLanguage, currentMod, currentLanguage, triggerUpdate, setCurrentMod, mods } =
@@ -36,15 +37,34 @@ export const Header = () => {
 
   return (
     <header className="fixed top-0 flex w-full flex-row gap-2 border-b-[1px] border-[hsl(var(--border))] bg-slate-900 p-3">
-      <Button onClick={copyNotTranslated}>[ Copy ]</Button>
-      <Button
-        onClick={(): void => {
-          if (!currentMod) return;
-          compileTranslations(currentMod);
-        }}
-      >
-        [ Save ]
-      </Button>
+      <TooltipProvider delayDuration={400}>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button onClick={copyNotTranslated}>[ Copy ]</Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" align="start">
+            <span>{"Copy all non translated keys from default language to current"}</span>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider delayDuration={400}>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              onClick={(): void => {
+                if (!currentMod) return;
+                compileTranslations(currentMod);
+              }}
+            >
+              [ Save ]
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" align="start">
+            <span>{"Download current mod's translation"}</span>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       <Select
         value={Language[currentLanguage]}
