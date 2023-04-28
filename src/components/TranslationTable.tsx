@@ -1,7 +1,7 @@
 import React, { useContext, type Dispatch, type SetStateAction, createRef, useState, useEffect } from "react";
-import { IoCloseOutline, IoTrashOutline } from "react-icons/io5";
 import { type TranslationKey, type Mod, TranslationContext, Language } from "../contexts/TranslationContext";
 import { Button } from "./ui/transparentButton";
+import { Eye, EyeOff, X, Trash2, BookTemplate, Book } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 const AutoHeightTextArea = (props: {
@@ -66,32 +66,35 @@ const AutoHeightTextArea = (props: {
   );
 };
 
-const TranslationRow = (props: { tKey: TranslationKey; index: number; mod: Mod; removeKey: { (): void } }) => {
-  const { tKey: key, index, mod, removeKey } = props;
+const TranslationRow = (props: {
+  currentKey: TranslationKey;
+  defaultKey: TranslationKey;
+  index: number;
+  mod: Mod;
+  removeKey: { (): void };
+}) => {
+  const { currentKey, defaultKey, index, mod, removeKey } = props;
   const { currentLanguage } = useContext(TranslationContext);
 
-  const [values, setValues] = useState<string[]>(key.values);
+  const [values, setValues] = useState<string[]>(currentKey.values);
   useEffect(() => {
-    setValues(key.values);
+    setValues(currentKey.values);
   }, [currentLanguage]);
 
   const invalid = () => values.length > 1;
   function isChangedFromDefault(currentValue: string | undefined): boolean {
     if (currentLanguage == mod.defaultLanguage || invalid()) return false;
-
-    const defaultLang = mod.keys.get(mod.defaultLanguage);
-    if (!defaultLang) return true;
-
-    const defaultValue = defaultLang.get(key.defType + key.defName + key.key)?.values[0];
-    return currentValue !== defaultValue;
+    return currentValue !== defaultKey.values[0];
   }
 
   const [changedFromDefault, setChangedFromDefault] = useState(isChangedFromDefault(values[0]));
 
   useEffect(() => {
-    key.values = values;
+    currentKey.values = values;
     setChangedFromDefault(isChangedFromDefault(values[0]));
   }, [values]);
+
+  const [showingDefault, setShowingDefault] = useState(false);
 
   return (
     <>
@@ -106,51 +109,70 @@ const TranslationRow = (props: { tKey: TranslationKey; index: number; mod: Mod; 
       </div>
 
       <div className="flex items-center border-b-[1px] border-[hsl(var(--border))]">
-        <span className="text-sm text-slate-500">{key.defType}</span>
+        <span className="text-sm text-slate-500">{currentKey.defType}</span>
         <span className="text-sm text-slate-500">:</span>
         <span>
-          {key.defName}
-          {key.key}
+          {currentKey.defName}
+          {currentKey.key}
         </span>
       </div>
 
       <div className="flex flex-row border-b-[1px] border-[hsl(var(--border))]">
+        {currentLanguage != mod.defaultLanguage && (
+          <div className="flex items-center">
+            <Button
+              onClick={() => {
+                setShowingDefault((prev) => !prev);
+              }}
+            >
+              {!showingDefault && <BookTemplate />}
+              {showingDefault && <Book />}
+            </Button>
+          </div>
+        )}
+
         <div className="grid w-full grid-flow-row grid-cols-[34px_1fr]">
-          {values.map((v, i) => {
-            return (
-              <React.Fragment key={v}>
-                <div className="flex items-center">
-                  {values.length == 1 && (
-                    <Button onClick={() => removeKey()}>
-                      <IoCloseOutline />
-                    </Button>
-                  )}
+          {(values.length == 1 || showingDefault) && (
+            <div className="flex items-center">
+              <Button onClick={removeKey}>
+                <X />
+              </Button>
+            </div>
+          )}
+          {showingDefault && (
+            <span className={cn("border-[hsl(var(--border)] w-full border-x-[1px] p-2")}>{defaultKey.values[0]}</span>
+          )}
+          {!showingDefault &&
+            values.map((v, i) => {
+              return (
+                <React.Fragment key={v}>
                   {values.length > 1 && (
-                    <Button
-                      onClick={() => {
-                        setValues((prev) => {
-                          prev.splice(i, 1);
-                          return [...prev];
-                        });
-                      }}
-                    >
-                      <IoTrashOutline />
-                    </Button>
+                    <div className="flex items-center">
+                      <Button
+                        onClick={() => {
+                          setValues((prev) => {
+                            prev.splice(i, 1);
+                            return [...prev];
+                          });
+                        }}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
                   )}
-                </div>
-                <AutoHeightTextArea
-                  index={i}
-                  values={values}
-                  onTextChange={(s) => {
-                    setChangedFromDefault(isChangedFromDefault(s));
-                  }}
-                  onFinishEditing={(s) => {
-                    key.values[i] = s ?? "";
-                  }}
-                />
-              </React.Fragment>
-            );
-          })}
+                  <AutoHeightTextArea
+                    index={i}
+                    values={values}
+                    onTextChange={(s) => {
+                      setChangedFromDefault(isChangedFromDefault(s));
+                    }}
+                    onFinishEditing={(s) => {
+                      currentKey.values[i] = s ?? "";
+                    }}
+                  />
+                </React.Fragment>
+              );
+            })}
         </div>
       </div>
     </>
@@ -166,7 +188,7 @@ const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateActi
           key={i}
           className={cn(
             `mb-1 mr-1 flex w-8 cursor-pointer select-none items-center justify-center border-[1px] border-[hsl(var(--border))]
-             bg-slate-900 px-2 py-1 text-slate-50 outline-none transition-colors hover:bg-slate-800 focus:bg-slate-800`,
+             bg-slate-900 px-2 py-1 text-slate-50 outline-none transition-colors hover:bg-slate-800 focus-visible:bg-slate-800`,
             page == i && "border-b-slate-200"
           )}
           onClick={() => {
@@ -181,9 +203,13 @@ const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateActi
   );
 };
 
-const TranslationTableControls = (props: { mod: Mod; langMap: Map<string, TranslationKey> }) => {
+const TranslationTableControls = (props: {
+  mod: Mod;
+  langMap: Map<string, TranslationKey>;
+  defaultLangMap: Map<string, TranslationKey>;
+}) => {
   const { currentLanguage, updateOnTrigger, triggerUpdate } = useContext(TranslationContext);
-  const { mod, langMap } = props;
+  const { mod, langMap, defaultLangMap } = props;
   const [page, setPage] = useState(0);
 
   const keysPerPage = 50;
@@ -218,7 +244,8 @@ const TranslationTableControls = (props: { mod: Mod; langMap: Map<string, Transl
           {array.map(([hash, key], index) => (
             <TranslationRow
               key={`${hash}${currentLanguage}`}
-              tKey={key}
+              currentKey={key}
+              defaultKey={defaultLangMap.get(hash) ?? key}
               index={index + from + 1}
               mod={mod}
               removeKey={() => {
@@ -240,7 +267,8 @@ export const TranslationTable = () => {
   if (!currentMod) return <></>;
 
   const langMap = currentMod.keys.get(currentLanguage);
-  if (!langMap) return <></>;
+  const defaultLangMap = currentMod.keys.get(currentMod.defaultLanguage);
+  if (!langMap || !defaultLangMap) return <></>;
 
-  return <TranslationTableControls mod={currentMod} langMap={langMap} />;
+  return <TranslationTableControls mod={currentMod} langMap={langMap} defaultLangMap={defaultLangMap} />;
 };
