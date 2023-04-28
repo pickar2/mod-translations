@@ -33,7 +33,7 @@ const AutoHeightTextArea = (props: {
   return (
     <div
       className={cn(
-        "flex h-full w-full items-center border-l-[1px] border-r-[1px] border-[hsl(var(--border))]",
+        "transition-border flex h-full w-full items-center border-x-[1px]  border-[hsl(var(--border))]",
         index != values.length - 1 && "border-b-[1px]",
         editingIndex == index && "border-x-slate-200"
       )}
@@ -112,7 +112,7 @@ const TranslationRow = (props: {
       >
         <div
           className={cn(
-            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0",
+            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
             selectingKey && "opacity-[0.15]"
           )}
         />
@@ -122,7 +122,7 @@ const TranslationRow = (props: {
       <div className="relative flex items-center border-b-[1px] border-[hsl(var(--border))]">
         <div
           className={cn(
-            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0",
+            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
             selectingKey && "opacity-[0.15]"
           )}
         />
@@ -137,7 +137,7 @@ const TranslationRow = (props: {
       <div className="relative flex flex-row border-b-[1px] border-[hsl(var(--border))]">
         <div
           className={cn(
-            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0",
+            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
             selectingKey && "opacity-[0.15]"
           )}
         />
@@ -145,7 +145,7 @@ const TranslationRow = (props: {
           <div className="mt-1 flex items-start">
             <TooltipProvider delayDuration={400}>
               <Tooltip>
-                <TooltipTrigger tabIndex={-1} asChild>
+                <TooltipTrigger asChild>
                   <Button
                     onClick={() => {
                       setShowingDefault((prev) => !prev);
@@ -170,7 +170,7 @@ const TranslationRow = (props: {
           <div className="mt-1 flex flex-col items-start">
             <TooltipProvider delayDuration={400}>
               <Tooltip>
-                <TooltipTrigger tabIndex={-1} asChild>
+                <TooltipTrigger asChild>
                   <Button
                     onClick={removeKey}
                     onMouseEnter={() => {
@@ -212,7 +212,7 @@ const TranslationRow = (props: {
                   >
                     <div
                       className={cn(
-                        "pointer-events-none absolute h-full w-full bg-red-800 opacity-0",
+                        "pointer-events-none absolute h-full w-full bg-red-800 opacity-0 transition-opacity",
                         selectingValue == i && "opacity-[0.1]"
                       )}
                     />
@@ -220,7 +220,7 @@ const TranslationRow = (props: {
                       <div className="absolute bottom-0 left-[-32px]">
                         <TooltipProvider delayDuration={400}>
                           <Tooltip>
-                            <TooltipTrigger tabIndex={-1} asChild>
+                            <TooltipTrigger asChild>
                               <Button
                                 onClick={() => {
                                   setValues((prev) => {
