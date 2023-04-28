@@ -36,7 +36,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 flex w-full flex-row gap-2 border-b-[1px] border-[hsl(var(--border))] bg-slate-900 p-3">
+    <header className="fixed top-0 z-10 flex w-full flex-row gap-2 border-b-[1px] border-[hsl(var(--border))] bg-slate-900 p-3">
       <TooltipProvider delayDuration={400}>
         <Tooltip>
           <TooltipTrigger asChild>

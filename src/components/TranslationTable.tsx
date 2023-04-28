@@ -24,6 +24,7 @@ const AutoHeightTextArea = (props: {
     element.style.height = newHeight;
   }
 
+  // TODO: update height on table width change
   useEffect((): void => {
     updateHeight(textAreaRef.current);
     onTextChange(textAreaRef.current?.value);
@@ -32,7 +33,7 @@ const AutoHeightTextArea = (props: {
   return (
     <div
       className={cn(
-        "w-full border-l-[1px] border-r-[1px] border-[hsl(var(--border))]",
+        "flex h-full w-full items-center border-l-[1px] border-r-[1px] border-[hsl(var(--border))]",
         index != values.length - 1 && "border-b-[1px]",
         editingIndex == index && "border-x-slate-200"
       )}
@@ -97,19 +98,34 @@ const TranslationRow = (props: {
 
   const [showingDefault, setShowingDefault] = useState(false);
 
+  const [selectingKey, setSelectingKey] = useState(false);
+  const [selectingValue, setSelectingValue] = useState(-1);
+
   return (
     <>
       <div
         className={cn(
-          "flex items-center justify-center border-b-[1px] border-l-[1px] border-[hsl(var(--border))]",
+          "relative flex items-center justify-center border-b-[1px] border-l-[1px] border-[hsl(var(--border))]",
           invalid() && "border-l-blue-600",
           changedFromDefault && "border-l-green-600"
         )}
       >
+        <div
+          className={cn(
+            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0",
+            selectingKey && "opacity-[0.15]"
+          )}
+        />
         <span className="p-1">{index}</span>
       </div>
 
-      <div className="flex items-center border-b-[1px] border-[hsl(var(--border))]">
+      <div className="relative flex items-center border-b-[1px] border-[hsl(var(--border))]">
+        <div
+          className={cn(
+            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0",
+            selectingKey && "opacity-[0.15]"
+          )}
+        />
         <span className="text-sm text-slate-500">{currentKey.defType}</span>
         <span className="text-sm text-slate-500">:</span>
         <span>
@@ -118,12 +134,18 @@ const TranslationRow = (props: {
         </span>
       </div>
 
-      <div className="flex flex-row border-b-[1px] border-[hsl(var(--border))]">
+      <div className="relative flex flex-row border-b-[1px] border-[hsl(var(--border))]">
+        <div
+          className={cn(
+            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0",
+            selectingKey && "opacity-[0.15]"
+          )}
+        />
         {currentLanguage != mod.defaultLanguage && (
-          <div className="flex items-center">
+          <div className="mt-1 flex items-start">
             <TooltipProvider delayDuration={400}>
               <Tooltip>
-                <TooltipTrigger tabIndex={-1}>
+                <TooltipTrigger tabIndex={-1} className="">
                   <Button
                     onClick={() => {
                       setShowingDefault((prev) => !prev);
@@ -135,7 +157,7 @@ const TranslationRow = (props: {
                 </TooltipTrigger>
                 <TooltipContent>
                   <span>
-                    {!showingDefault && "Show template text"}
+                    {!showingDefault && "Show original text"}
                     {showingDefault && "Show translation"}
                   </span>
                 </TooltipContent>
@@ -144,66 +166,101 @@ const TranslationRow = (props: {
           </div>
         )}
 
-        <div className="grid w-full grid-flow-row grid-cols-[34px_1fr]">
-          {(values.length == 1 || showingDefault) && (
-            <div className="flex items-center">
-              <TooltipProvider delayDuration={400}>
-                <Tooltip>
-                  <TooltipTrigger tabIndex={-1}>
-                    <Button onClick={removeKey}>
-                      <X />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <span>Remove key</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          )}
+        <div className="flex w-full">
+          {/* {(values.length == 1 || showingDefault) && ( */}
+          <div className="mt-1 flex flex-col items-start">
+            <TooltipProvider delayDuration={400}>
+              <Tooltip>
+                <TooltipTrigger tabIndex={-1}>
+                  <Button
+                    onClick={removeKey}
+                    onMouseEnter={() => {
+                      setSelectingKey(true);
+                    }}
+                    onMouseLeave={() => {
+                      setSelectingKey(false);
+                    }}
+                    onFocus={() => {
+                      setSelectingKey(true);
+                    }}
+                    onBlur={() => {
+                      setSelectingKey(false);
+                    }}
+                  >
+                    <X />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>Remove key</span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          {/* )} */}
           {showingDefault && (
             <span className={cn("border-[hsl(var(--border)] w-full border-x-[1px] p-2")}>{defaultKey.values[0]}</span>
           )}
-          {!showingDefault &&
-            values.map((v, i) => {
-              return (
-                <React.Fragment key={v}>
-                  {values.length > 1 && (
-                    <div className="flex items-center">
-                      <TooltipProvider delayDuration={400}>
-                        <Tooltip>
-                          <TooltipTrigger tabIndex={-1}>
-                            <Button
-                              onClick={() => {
-                                setValues((prev) => {
-                                  prev.splice(i, 1);
-                                  return [...prev];
-                                });
-                              }}
-                            >
-                              <Trash2 />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <span>Remove item</span>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  )}
-                  <AutoHeightTextArea
-                    index={i}
-                    values={values}
-                    onTextChange={(s) => {
-                      setChangedFromDefault(isChangedFromDefault(s));
-                    }}
-                    onFinishEditing={(s) => {
-                      currentKey.values[i] = s ?? "";
-                    }}
-                  />
-                </React.Fragment>
-              );
-            })}
+          {!showingDefault && (
+            <div className="flex w-full flex-col">
+              {values.map((v, i) => {
+                return (
+                  <div key={v} className={cn("relative", values.length > 1 && `min-h-[${i == 0 ? 65 : 64}px]`)}>
+                    <div
+                      className={cn(
+                        "pointer-events-none absolute h-full w-full bg-red-800 opacity-0",
+                        selectingValue == i && "opacity-[0.1]"
+                      )}
+                    />
+                    {values.length > 1 && (
+                      <div className="absolute bottom-0 left-[-32px]">
+                        <TooltipProvider delayDuration={400}>
+                          <Tooltip>
+                            <TooltipTrigger tabIndex={-1}>
+                              <Button
+                                onClick={() => {
+                                  setValues((prev) => {
+                                    prev.splice(i, 1);
+                                    return [...prev];
+                                  });
+                                }}
+                                onMouseEnter={() => {
+                                  setSelectingValue(i);
+                                }}
+                                onMouseLeave={() => {
+                                  setSelectingValue(-1);
+                                }}
+                                onFocus={() => {
+                                  setSelectingValue(i);
+                                }}
+                                onBlur={() => {
+                                  setSelectingValue(-1);
+                                }}
+                              >
+                                <Trash2 />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <span>Remove item</span>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    )}
+                    <AutoHeightTextArea
+                      index={i}
+                      values={values}
+                      onTextChange={(s) => {
+                        setChangedFromDefault(isChangedFromDefault(s));
+                      }}
+                      onFinishEditing={(s) => {
+                        currentKey.values[i] = s ?? "";
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </>
@@ -271,7 +328,7 @@ const TranslationTableControls = (props: {
         <span>
           {mod.name} @ {Language[currentLanguage]}
         </span>
-        <div className="grid w-[1200px] grid-flow-row grid-cols-[36px_3fr_4fr] border-t-[1px] border-[hsl(var(--border))]">
+        <div className="relative grid w-[80vw] grid-flow-row grid-cols-[36px_2fr_3fr] border-t-[1px] border-[hsl(var(--border))]">
           {array.map(([hash, key], index) => (
             <TranslationRow
               key={`${hash}${currentLanguage}`}
