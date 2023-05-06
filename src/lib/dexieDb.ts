@@ -27,9 +27,9 @@ export class TranslationsDb extends Dexie {
 
   constructor() {
     super("myDatabase");
-    this.version(1).stores({
+    this.version(2).stores({
       mods: "++id, modId, modName, defaultLanguage",
-      translations: "++id, modId, defType, defName, key, language",
+      translations: "++id, [modId+language], [key+defName+defType+modId+language]",
     });
   }
 }

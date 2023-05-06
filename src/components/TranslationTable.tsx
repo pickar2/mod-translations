@@ -4,10 +4,14 @@ import { Button } from "./ui/transparentButton";
 import { X, Trash2, BookTemplate, Book } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { useLocalStorage } from "~/lib/hooks";
+import { useLocalStorage } from "~/lib/useLocalStorage";
 import NoSsr from "./NoSsr";
 import { openDB, DBSchema } from "idb";
 import { Id } from "@reduxjs/toolkit/dist/tsHelpers";
+import { TranslationRecord, dexieDb } from "~/lib/dexieDb";
+import { useLiveQuery } from "dexie-react-hooks";
+import { useRef } from "react";
+import useAsyncLiveQuery from "~/lib/useAsyncLiveQuery";
 
 const AutoHeightTextArea = (props: {
   index: number;
@@ -73,23 +77,23 @@ const AutoHeightTextArea = (props: {
 };
 
 const TranslationRow = (props: {
-  currentKey: TranslationKey;
+  currentKey: TranslationRecord;
   defaultKey: TranslationKey;
   index: number;
   mod: Mod;
+  language: Language;
   removeKey: { (): void };
 }) => {
-  const { currentKey, defaultKey, index, mod, removeKey } = props;
-  const { currentLanguage } = useContext(TranslationContext);
+  const { currentKey, defaultKey, index, mod, removeKey, language } = props;
 
   const [values, setValues] = useState<string[]>(currentKey.values);
   useEffect(() => {
     setValues(currentKey.values);
-  }, [currentLanguage]);
+  }, [language]);
 
   const invalid = () => values.length > 1;
   function isChangedFromDefault(currentValue: string | undefined): boolean {
-    if (currentLanguage == mod.defaultLanguage || invalid()) return false;
+    if (language == mod.defaultLanguage || invalid()) return false;
     return currentValue !== defaultKey.values[0];
   }
 
@@ -145,7 +149,7 @@ const TranslationRow = (props: {
             selectingKey && "opacity-[0.15]"
           )}
         />
-        {currentLanguage != mod.defaultLanguage && (
+        {language != mod.defaultLanguage && (
           <div className="mt-1 flex items-start">
             <TooltipProvider delayDuration={400}>
               <Tooltip>
@@ -263,6 +267,7 @@ const TranslationRow = (props: {
                       }}
                       onFinishEditing={(s) => {
                         currentKey.values[i] = s ?? "";
+                        void dexieDb.translations.update(currentKey, { values: currentKey.values });
                       }}
                     />
                   </div>
@@ -284,8 +289,8 @@ const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateActi
         <button
           key={i}
           className={cn(
-            `mb-1 mr-1 flex w-8 cursor-pointer select-none items-center justify-center border-[1px] border-[hsl(var(--border))]
-             bg-slate-900 px-2 py-1 text-slate-50 outline-none transition-colors hover:bg-slate-800 focus-visible:bg-slate-800`,
+            `mb-1 mr-1 flex w-8 cursor-pointer select-none items-center justify-center border-[1px] border-[hsl(var(--border))] bg-slate-900
+             px-2 py-1 font-mono text-slate-50 outline-none transition-colors hover:bg-slate-800 focus-visible:bg-slate-800`,
             page == i && "border-b-slate-200"
           )}
           onClick={() => {
@@ -300,13 +305,9 @@ const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateActi
   );
 };
 
-const TranslationTableControls = (props: {
-  mod: Mod;
-  langMap: Map<string, TranslationKey>;
-  defaultLangMap: Map<string, TranslationKey>;
-}) => {
-  const { currentLanguage, updateOnTrigger, triggerUpdate } = useContext(TranslationContext);
-  const { mod, langMap, defaultLangMap } = props;
+const TranslationTableControls = (props: { mod: Mod; language: Language; records: TranslationRecord[] }) => {
+  const { updateOnTrigger, triggerUpdate } = useContext(TranslationContext);
+  const { mod, language, records } = props;
   const [page, setPage] = useLocalStorage<number>("currentPage", 0);
 
   const keysPerPage = 25;
@@ -314,39 +315,28 @@ const TranslationTableControls = (props: {
   const to = (page + 1) * keysPerPage;
 
   useEffect(() => {
-    setPage((p) => Math.max(Math.min(p, Math.floor(langMap.size / keysPerPage)), 0));
-  }, [mod, currentLanguage, page, langMap.size]);
-
-  const array = new Array<[string, TranslationKey]>(50);
-
-  let i = 0;
-  let index = 0;
-  for (const entry of langMap) {
-    if (i >= from) {
-      array[index++] = entry;
-    }
-    i++;
-    if (i >= to) break;
-  }
+    setPage((p) => Math.max(Math.min(p, Math.floor(records.length / keysPerPage)), 0));
+  }, [mod, language, page, records, setPage]);
 
   return (
     <>
-      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(langMap.size / keysPerPage)} />
+      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(records.length / keysPerPage)} />
 
       <div className="flex flex-col content-center items-center bg-slate-900 text-slate-50">
         <span>
-          {mod.name} @ {Language[currentLanguage]}
+          {mod.name} @ {Language[language]}
         </span>
         <div className="relative grid w-[80vw] grid-flow-row grid-cols-[36px_2fr_3fr] border-t-[1px] border-[hsl(var(--border))]">
-          {array.map(([hash, key], index) => (
+          {records?.slice(from, to).map((key, index) => (
             <TranslationRow
-              key={`${hash}${currentLanguage}`}
+              key={`${key.id || -1}`}
               currentKey={key}
-              defaultKey={defaultLangMap.get(hash) ?? key}
+              defaultKey={key}
               index={index + from + 1}
               mod={mod}
+              language={language}
               removeKey={() => {
-                langMap.delete(hash);
+                // records.delete(hash);
                 triggerUpdate();
               }}
             />
@@ -354,80 +344,36 @@ const TranslationTableControls = (props: {
         </div>
       </div>
 
-      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(langMap.size / keysPerPage)} />
+      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(records.length / keysPerPage)} />
     </>
   );
 };
 
 export const TranslationTable = () => {
-  const { currentMod, currentLanguage, mods, db } = useContext(TranslationContext);
+  const { currentMod, currentLanguage } = useContext(TranslationContext);
+
+  const [dataState, setDataState] = useState<TranslationRecord[] | undefined>(undefined);
 
   useEffect(() => {
-    async function initDb() {
-      if (!db) return;
+    if (!currentMod) return;
+    setDataState(undefined);
+    void (async () =>
+      setDataState(await dexieDb.translations.where({ modId: currentMod.id, language: currentLanguage }).toArray()))();
+  }, [currentLanguage, currentMod]);
 
-      // await db.put("mods", { modName: "test mod", defaultLanguage: Language.English }, "testModId");
-      // await db.put("translations", {
-      //   modId: "testModId",
-      //   defName: "someDefName",
-      //   defType: "dummyDef1",
-      //   key: "some.label",
-      //   language: Language.English,
-      //   values: ["v1", "v2"],
-      // });
-      // await db.put("translations", {
-      //   modId: "testModId",
-      //   defName: "someDefName2",
-      //   defType: "dummyDef1",
-      //   key: "some.label",
-      //   language: Language.English,
-      //   values: ["v3"],
-      // });
-      // await db.put("translations", {
-      //   modId: "testModId2",
-      //   defName: "someDefName",
-      //   defType: "dummyDef1",
-      //   key: "some.label",
-      //   language: Language.English,
-      //   values: ["v4"],
-      // });
-      // await db.put("translations", {
-      //   modId: "testModId2",
-      //   defName: "someDefName",
-      //   defType: "dummyDef1",
-      //   key: "some.label",
-      //   language: Language.Russian,
-      //   values: ["в4"],
-      // });
+  // useLiveQuery(async () => {
+  //   if (!currentMod) return;
+  //   setDataState(undefined);
+  //   setDataState(await dexieDb.translations.where({ modId: currentMod.id, language: currentLanguage }).toArray());
+  // }, [currentLanguage, currentMod]);
 
-      console.log("all", await db.getAll("translations"));
-      // console.log("unique", await db.getAllFromIndex("translations", "unique"));
-      // console.log("byModLang", await db.getAllFromIndex("translations", "byModLang"));
-      // console.log(
-      //   "mod 1 all english",
-      //   await db.getAllFromIndex("translations", "byModLang", ["testModId", Language.English])
-      // );
-      // console.log(
-      //   "mod 2 all english",
-      //   await db.getAllFromIndex("translations", "byModLang", ["testModId2", Language.English])
-      // );
-      // console.log(
-      //   "mod 2 all russian",
-      //   await db.getAllFromIndex("translations", "byModLang", ["testModId2", Language.Russian])
-      // );
-    }
-    void initDb();
-  }, [db, currentMod]);
+  if (!dataState || !currentMod) return <>Loading...</>;
 
-  if (!currentMod) return <></>;
-
-  const langMap = currentMod.keys.get(currentLanguage);
-  const defaultLangMap = currentMod.keys.get(currentMod.defaultLanguage);
-  if (!langMap || !defaultLangMap) return <></>;
+  if (dataState.length == 0) return <>No data</>;
 
   return (
     <NoSsr>
-      <TranslationTableControls mod={currentMod} langMap={langMap} defaultLangMap={defaultLangMap} />
+      <TranslationTableControls records={dataState} mod={currentMod} language={currentLanguage} />
     </NoSsr>
   );
 };
