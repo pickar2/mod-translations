@@ -4,6 +4,10 @@ import { Button } from "./ui/transparentButton";
 import { X, Trash2, BookTemplate, Book } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { useLocalStorage } from "~/lib/hooks";
+import NoSsr from "./NoSsr";
+import { openDB, DBSchema } from "idb";
+import { Id } from "@reduxjs/toolkit/dist/tsHelpers";
 
 const AutoHeightTextArea = (props: {
   index: number;
@@ -303,7 +307,7 @@ const TranslationTableControls = (props: {
 }) => {
   const { currentLanguage, updateOnTrigger, triggerUpdate } = useContext(TranslationContext);
   const { mod, langMap, defaultLangMap } = props;
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useLocalStorage<number>("currentPage", 0);
 
   const keysPerPage = 25;
   const from = page * keysPerPage;
@@ -356,12 +360,74 @@ const TranslationTableControls = (props: {
 };
 
 export const TranslationTable = () => {
-  const { currentMod, currentLanguage } = useContext(TranslationContext);
+  const { currentMod, currentLanguage, mods, db } = useContext(TranslationContext);
+
+  useEffect(() => {
+    async function initDb() {
+      if (!db) return;
+
+      // await db.put("mods", { modName: "test mod", defaultLanguage: Language.English }, "testModId");
+      // await db.put("translations", {
+      //   modId: "testModId",
+      //   defName: "someDefName",
+      //   defType: "dummyDef1",
+      //   key: "some.label",
+      //   language: Language.English,
+      //   values: ["v1", "v2"],
+      // });
+      // await db.put("translations", {
+      //   modId: "testModId",
+      //   defName: "someDefName2",
+      //   defType: "dummyDef1",
+      //   key: "some.label",
+      //   language: Language.English,
+      //   values: ["v3"],
+      // });
+      // await db.put("translations", {
+      //   modId: "testModId2",
+      //   defName: "someDefName",
+      //   defType: "dummyDef1",
+      //   key: "some.label",
+      //   language: Language.English,
+      //   values: ["v4"],
+      // });
+      // await db.put("translations", {
+      //   modId: "testModId2",
+      //   defName: "someDefName",
+      //   defType: "dummyDef1",
+      //   key: "some.label",
+      //   language: Language.Russian,
+      //   values: ["в4"],
+      // });
+
+      console.log("all", await db.getAll("translations"));
+      // console.log("unique", await db.getAllFromIndex("translations", "unique"));
+      // console.log("byModLang", await db.getAllFromIndex("translations", "byModLang"));
+      // console.log(
+      //   "mod 1 all english",
+      //   await db.getAllFromIndex("translations", "byModLang", ["testModId", Language.English])
+      // );
+      // console.log(
+      //   "mod 2 all english",
+      //   await db.getAllFromIndex("translations", "byModLang", ["testModId2", Language.English])
+      // );
+      // console.log(
+      //   "mod 2 all russian",
+      //   await db.getAllFromIndex("translations", "byModLang", ["testModId2", Language.Russian])
+      // );
+    }
+    void initDb();
+  }, [db, currentMod]);
+
   if (!currentMod) return <></>;
 
   const langMap = currentMod.keys.get(currentLanguage);
   const defaultLangMap = currentMod.keys.get(currentMod.defaultLanguage);
   if (!langMap || !defaultLangMap) return <></>;
 
-  return <TranslationTableControls mod={currentMod} langMap={langMap} defaultLangMap={defaultLangMap} />;
+  return (
+    <NoSsr>
+      <TranslationTableControls mod={currentMod} langMap={langMap} defaultLangMap={defaultLangMap} />
+    </NoSsr>
+  );
 };

@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { cn } from "~/lib/utils";
 import { compileTranslations } from "~/utils/zipUtils";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
+import NoSsr from "./NoSsr";
 
 export const Header = () => {
   const { setCurrentLanguage, currentMod, currentLanguage, triggerUpdate, setCurrentMod, mods } =
@@ -88,28 +89,30 @@ export const Header = () => {
         </SelectContent>
       </Select>
 
-      <Select
-        value={currentMod?.id}
-        onValueChange={(v) => {
-          const mod = mods.find((m) => m.id === v);
-          setCurrentMod(mod);
-        }}
-      >
-        <SelectTrigger className={cn("w-auto min-w-[180px]")}>
-          <SelectValue placeholder="Select a mod" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {mods.map((m) => {
-              return (
-                <SelectItem value={m.id} key={m.id}>
-                  {m.name}
-                </SelectItem>
-              );
-            })}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+      <NoSsr>
+        <Select
+          value={currentMod?.id}
+          onValueChange={(v) => {
+            const mod = mods.find((m) => m.id === v);
+            setCurrentMod(mod);
+          }}
+        >
+          <SelectTrigger className={cn("w-auto min-w-[180px]")}>
+            <SelectValue placeholder="Select a mod" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {mods.map((m) => {
+                return (
+                  <SelectItem value={m.id} key={m.id}>
+                    {m.name}
+                  </SelectItem>
+                );
+              })}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </NoSsr>
     </header>
   );
 };
