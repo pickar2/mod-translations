@@ -8,7 +8,7 @@ import { useLocalStorage } from "~/lib/useLocalStorage";
 import NoSsr from "./NoSsr";
 import { openDB, DBSchema } from "idb";
 import { Id } from "@reduxjs/toolkit/dist/tsHelpers";
-import { TranslationRecord, dexieDb } from "~/lib/dexieDb";
+import { TranslationRecord, dexieDb, getTranslationUnique } from "~/lib/dexieDb";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useRef } from "react";
 import useAsyncLiveQuery from "~/lib/useAsyncLiveQuery";
@@ -109,6 +109,19 @@ const TranslationRow = (props: {
   const [selectingKey, setSelectingKey] = useState(false);
   const [selectingValue, setSelectingValue] = useState(-1);
 
+  const [defaultKeyState, setDefaultKeyState] = useState<string | undefined>();
+
+  async function retrieveDefaultKey() {
+    const key = await getTranslationUnique(
+      currentKey.key,
+      currentKey.defName,
+      currentKey.defType,
+      currentKey.modId,
+      mod.defaultLanguage
+    );
+    setDefaultKeyState(key?.values[0]);
+  }
+
   return (
     <>
       <div
@@ -156,6 +169,7 @@ const TranslationRow = (props: {
                 <TooltipTrigger asChild>
                   <Button
                     onClick={() => {
+                      if (!defaultKeyState) void retrieveDefaultKey();
                       setShowingDefault((prev) => !prev);
                     }}
                   >
@@ -204,7 +218,9 @@ const TranslationRow = (props: {
             </TooltipProvider>
           </div>
           {showingDefault && (
-            <span className={cn("border-[hsl(var(--border)] w-full border-x-[1px] p-2")}>{defaultKey.values[0]}</span>
+            <span className={cn("border-[hsl(var(--border)] w-full border-x-[1px] p-2")}>
+              {defaultKeyState || "Loading..."}
+            </span>
           )}
           {!showingDefault && (
             <div className="flex w-full flex-col">
@@ -310,24 +326,26 @@ const TranslationTableControls = (props: { mod: Mod; language: Language; records
   const { mod, language, records } = props;
   const [page, setPage] = useLocalStorage<number>("currentPage", 0);
 
+  const [recordsState, setRecordsState] = useState(records);
+
   const keysPerPage = 25;
   const from = page * keysPerPage;
   const to = (page + 1) * keysPerPage;
 
   useEffect(() => {
-    setPage((p) => Math.max(Math.min(p, Math.floor(records.length / keysPerPage)), 0));
-  }, [mod, language, page, records, setPage]);
+    setPage((p) => Math.max(Math.min(p, Math.floor((recordsState.length - 1) / keysPerPage)), 0));
+  }, [mod, language, page, recordsState, setPage]);
 
   return (
     <>
-      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(records.length / keysPerPage)} />
+      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(recordsState.length / keysPerPage)} />
 
       <div className="flex flex-col content-center items-center bg-slate-900 text-slate-50">
         <span>
           {mod.name} @ {Language[language]}
         </span>
         <div className="relative grid w-[80vw] grid-flow-row grid-cols-[36px_2fr_3fr] border-t-[1px] border-[hsl(var(--border))]">
-          {records?.slice(from, to).map((key, index) => (
+          {recordsState.slice(from, to).map((key, index) => (
             <TranslationRow
               key={`${key.id || -1}`}
               currentKey={key}
@@ -336,7 +354,11 @@ const TranslationTableControls = (props: { mod: Mod; language: Language; records
               mod={mod}
               language={language}
               removeKey={() => {
-                // records.delete(hash);
+                if (typeof key.id !== "undefined") void dexieDb.translations.delete(key.id);
+                setRecordsState((r) => {
+                  r.splice(index + from, 1);
+                  return r;
+                });
                 triggerUpdate();
               }}
             />
@@ -344,7 +366,7 @@ const TranslationTableControls = (props: { mod: Mod; language: Language; records
         </div>
       </div>
 
-      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(records.length / keysPerPage)} />
+      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(recordsState.length / keysPerPage)} />
     </>
   );
 };
@@ -361,15 +383,8 @@ export const TranslationTable = () => {
       setDataState(await dexieDb.translations.where({ modId: currentMod.id, language: currentLanguage }).toArray()))();
   }, [currentLanguage, currentMod]);
 
-  // useLiveQuery(async () => {
-  //   if (!currentMod) return;
-  //   setDataState(undefined);
-  //   setDataState(await dexieDb.translations.where({ modId: currentMod.id, language: currentLanguage }).toArray());
-  // }, [currentLanguage, currentMod]);
-
-  if (!dataState || !currentMod) return <>Loading...</>;
-
-  if (dataState.length == 0) return <>No data</>;
+  if (!dataState) return <>Loading...</>;
+  if (dataState.length == 0 || !currentMod) return <>No data</>;
 
   return (
     <NoSsr>

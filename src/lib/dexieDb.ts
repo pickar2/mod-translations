@@ -35,3 +35,19 @@ export class TranslationsDb extends Dexie {
 }
 
 export const dexieDb = new TranslationsDb();
+
+export async function getTranslationModLang(modId: string, language: Language) {
+  return await dexieDb.translations.where({ modId: modId, language: language }).first();
+}
+
+export async function getTranslationUnique(
+  key: string,
+  defName: string,
+  defType: string,
+  modId: string,
+  language: Language
+) {
+  return await dexieDb.translations
+    .where({ key: key, defName: defName, defType: defType, modId: modId, language: language })
+    .first();
+}
