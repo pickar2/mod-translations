@@ -5,6 +5,8 @@ Plan was to create system where people can request mod's translation to certain 
 Currently you can only upload mod and it will automatically find all lines of text that need to be translated and package it in format that Rimworld understands.
 Key/value pairs can be translated through site's interface with easy access to orignal text. Translation can be downloaded and added to Rimworld as a mod.
 
+[Vercel demo](https://mod-translations.vercel.app/)
+
 To load mod simply drag and drop mod's folder.
 ![demo](./img/demo_drop.png)
 
