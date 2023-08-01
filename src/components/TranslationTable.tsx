@@ -1,25 +1,28 @@
-import React, { useContext, type Dispatch, type SetStateAction, createRef, useState, useEffect } from "react";
-import { type TranslationKey, type Mod, TranslationContext, Language } from "../contexts/TranslationContext";
-import { Button } from "./ui/transparentButton";
+import React, {
+  useContext,
+  type Dispatch,
+  type SetStateAction,
+  createRef,
+  useState,
+  useEffect,
+  type HTMLAttributes,
+} from "react";
+import { type Mod, TranslationContext, Language } from "../contexts/TranslationContext";
 import { X, Trash2, BookTemplate, Book } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { useLocalStorage } from "~/lib/useLocalStorage";
 import NoSsr from "./NoSsr";
-import { openDB, DBSchema } from "idb";
-import { Id } from "@reduxjs/toolkit/dist/tsHelpers";
-import { TranslationRecord, dexieDb, getTranslationUnique } from "~/lib/dexieDb";
-import { useLiveQuery } from "dexie-react-hooks";
-import { useRef } from "react";
-import useAsyncLiveQuery from "~/lib/useAsyncLiveQuery";
+import { type TranslationRecord, dexieDb, getTranslationUnique } from "~/lib/dexieDb";
+import { ButtonWithTooltip } from "./ui/buttonWithTooltip";
 
 const AutoHeightTextArea = (props: {
   index: number;
   values: string[];
   onTextChange: (value: string | undefined) => void;
   onFinishEditing: (value: string | undefined) => void;
+  className?: string | undefined;
 }) => {
-  const { index, values, onFinishEditing, onTextChange } = props;
+  const { index, values, onFinishEditing, onTextChange, className } = props;
   const textAreaRef = createRef<HTMLTextAreaElement>();
   const defaultHeight = "40px";
   const [editingIndex, setEditingIndex] = useState<number>(-1);
@@ -41,14 +44,17 @@ const AutoHeightTextArea = (props: {
   return (
     <div
       className={cn(
-        "transition-border flex h-full w-full items-center border-x-[1px]  border-[hsl(var(--border))]",
+        "transition-border flex h-full w-full items-center border-x-[1px] border-[hsl(var(--border))]",
         index != values.length - 1 && "border-b-[1px]",
         editingIndex == index && "border-x-slate-200"
       )}
     >
       <textarea
         ref={textAreaRef}
-        className={`flex w-full resize-none items-center overflow-hidden bg-slate-900 p-2 outline-none transition-colors hover:bg-slate-800 focus:bg-slate-800 `}
+        className={cn(
+          "flex w-full resize-none items-center overflow-hidden bg-slate-950 p-2 outline-none transition-colors hover:bg-slate-800 focus:bg-slate-800",
+          className
+        )}
         style={{ height: defaultHeight }}
         placeholder="Translation"
         wrap="soft"
@@ -76,227 +82,6 @@ const AutoHeightTextArea = (props: {
   );
 };
 
-const TranslationRow = (props: {
-  currentKey: TranslationRecord;
-  defaultKey: TranslationKey;
-  index: number;
-  mod: Mod;
-  language: Language;
-  removeKey: { (): void };
-}) => {
-  const { currentKey, defaultKey, index, mod, removeKey, language } = props;
-
-  const [values, setValues] = useState<string[]>(currentKey.values);
-  useEffect(() => {
-    setValues(currentKey.values);
-  }, [language]);
-
-  const invalid = () => values.length > 1;
-  function isChangedFromDefault(currentValue: string | undefined): boolean {
-    if (language == mod.defaultLanguage || invalid()) return false;
-    return currentValue !== defaultKey.values[0];
-  }
-
-  const [changedFromDefault, setChangedFromDefault] = useState(isChangedFromDefault(values[0]));
-
-  useEffect(() => {
-    currentKey.values = values;
-    setChangedFromDefault(isChangedFromDefault(values[0]));
-  }, [values]);
-
-  const [showingDefault, setShowingDefault] = useState(false);
-
-  const [selectingKey, setSelectingKey] = useState(false);
-  const [selectingValue, setSelectingValue] = useState(-1);
-
-  const [defaultKeyState, setDefaultKeyState] = useState<string | undefined>();
-
-  async function retrieveDefaultKey() {
-    const key = await getTranslationUnique(
-      currentKey.key,
-      currentKey.defName,
-      currentKey.defType,
-      currentKey.modId,
-      mod.defaultLanguage
-    );
-    setDefaultKeyState(key?.values[0]);
-  }
-
-  return (
-    <>
-      <div
-        className={cn(
-          "relative flex items-center justify-center border-b-[1px] border-l-[1px] border-[hsl(var(--border))]",
-          invalid() && "border-l-blue-600",
-          changedFromDefault && "border-l-green-600"
-        )}
-      >
-        <div
-          className={cn(
-            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
-            selectingKey && "opacity-[0.15]"
-          )}
-        />
-        <span className="p-1">{index}</span>
-      </div>
-
-      <div className="relative flex items-center border-b-[1px] border-[hsl(var(--border))]">
-        <div
-          className={cn(
-            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
-            selectingKey && "opacity-[0.15]"
-          )}
-        />
-        <span className="text-sm text-slate-500">{currentKey.defType}</span>
-        <span className="text-sm text-slate-500">:</span>
-        <span>
-          {currentKey.defName}
-          {currentKey.key}
-        </span>
-      </div>
-
-      <div className="relative flex flex-row border-b-[1px] border-[hsl(var(--border))]">
-        <div
-          className={cn(
-            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
-            selectingKey && "opacity-[0.15]"
-          )}
-        />
-        {language != mod.defaultLanguage && (
-          <div className="mt-1 flex items-start">
-            <TooltipProvider delayDuration={400}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => {
-                      if (!defaultKeyState) void retrieveDefaultKey();
-                      setShowingDefault((prev) => !prev);
-                    }}
-                  >
-                    {!showingDefault && <BookTemplate />}
-                    {showingDefault && <Book />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>
-                    {!showingDefault && "Show original text"}
-                    {showingDefault && "Show translation"}
-                  </span>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        )}
-
-        <div className="flex w-full">
-          <div className="mt-1 flex flex-col items-start">
-            <TooltipProvider delayDuration={400}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={removeKey}
-                    onMouseEnter={() => {
-                      setSelectingKey(true);
-                    }}
-                    onMouseLeave={() => {
-                      setSelectingKey(false);
-                    }}
-                    onFocus={() => {
-                      setSelectingKey(true);
-                    }}
-                    onBlur={() => {
-                      setSelectingKey(false);
-                    }}
-                  >
-                    <X />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>Remove key</span>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          {showingDefault && (
-            <span className={cn("border-[hsl(var(--border)] w-full border-x-[1px] p-2")}>
-              {defaultKeyState || "Loading..."}
-            </span>
-          )}
-          {!showingDefault && (
-            <div className="flex w-full flex-col">
-              {values.map((v, i) => {
-                return (
-                  <div
-                    key={v}
-                    className={cn(
-                      "relative",
-                      values.length > 1 && i == 0 && `min-h-[65px]`,
-                      values.length > 1 && i !== 0 && `min-h-[64px]`
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "pointer-events-none absolute h-full w-full bg-red-800 opacity-0 transition-opacity",
-                        selectingValue == i && "opacity-[0.1]"
-                      )}
-                    />
-                    {values.length > 1 && (
-                      <div className="absolute bottom-0 left-[-32px]">
-                        <TooltipProvider delayDuration={400}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                onClick={() => {
-                                  setValues((prev) => {
-                                    prev.splice(i, 1);
-                                    return [...prev];
-                                  });
-                                }}
-                                onMouseEnter={() => {
-                                  setSelectingValue(i);
-                                }}
-                                onMouseLeave={() => {
-                                  setSelectingValue(-1);
-                                }}
-                                onFocus={() => {
-                                  setSelectingValue(i);
-                                }}
-                                onBlur={() => {
-                                  setSelectingValue(-1);
-                                }}
-                              >
-                                <Trash2 />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <span>Remove item</span>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    )}
-                    <AutoHeightTextArea
-                      index={i}
-                      values={values}
-                      onTextChange={(s) => {
-                        setChangedFromDefault(isChangedFromDefault(s));
-                      }}
-                      onFinishEditing={(s) => {
-                        currentKey.values[i] = s ?? "";
-                        void dexieDb.translations.update(currentKey, { values: currentKey.values });
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  );
-};
-
 const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateAction<number>>; buttonCount: number }) => {
   const { page, setPage, buttonCount } = props;
   return (
@@ -305,7 +90,7 @@ const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateActi
         <button
           key={i}
           className={cn(
-            `mb-1 mr-1 flex w-8 cursor-pointer select-none items-center justify-center border-[1px] border-[hsl(var(--border))] bg-slate-900
+            `mb-1 mr-1 flex w-8 cursor-pointer select-none items-center justify-center border-[1px] border-[hsl(var(--border))] bg-slate-950
              px-2 py-1 font-mono text-slate-50 outline-none transition-colors hover:bg-slate-800 focus-visible:bg-slate-800`,
             page == i && "border-b-slate-200"
           )}
@@ -318,6 +103,185 @@ const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateActi
         </button>
       ))}
     </div>
+  );
+};
+
+const Overlay = (props: HTMLAttributes<HTMLDivElement>) => {
+  const { className, ...other } = props;
+  return (
+    <div
+      className={cn(
+        "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
+        className
+      )}
+      {...other}
+    />
+  );
+};
+
+const TranslationRow = (props: {
+  record: TranslationRecord;
+  index: number;
+  mod: Mod;
+  language: Language;
+  onRecordRemove: { (): void };
+}) => {
+  const { record, index, mod, language, onRecordRemove } = props;
+  const [showingOriginal, setShowingOriginal] = useState(false);
+  const [originalText, setOriginalText] = useState<string | undefined>();
+  const [selectingRecord, setSelectingRecord] = useState(false);
+  const [selectingValue, setSelectingValue] = useState(-1);
+  const [differentFromOriginal, setDifferentFromOriginal] = useState(false);
+
+  function updateValue(index: number, text: string) {
+    record.values[index] = text ?? "";
+    void dexieDb.translations.update(record, { values: record.values });
+  }
+
+  function removeValue(index: number) {
+    record.values.splice(index, 1);
+    void dexieDb.translations.update(record, { values: record.values });
+  }
+
+  function checkDifference() {
+    if (language == mod.defaultLanguage) return setDifferentFromOriginal(false);
+    if (typeof originalText === "undefined" || record.values.length !== 1) return setDifferentFromOriginal(false);
+
+    setDifferentFromOriginal(originalText !== record.values[0]);
+  }
+
+  useEffect(checkDifference, [originalText]);
+
+  async function retrieveOriginalText() {
+    if (language == mod.defaultLanguage) return;
+
+    const originalRecord = await getTranslationUnique(
+      record.key,
+      record.defName,
+      record.defType,
+      record.modId,
+      mod.defaultLanguage
+    );
+    setOriginalText(originalRecord?.values[0]);
+  }
+  if (typeof originalText === "undefined") void retrieveOriginalText();
+
+  return (
+    <>
+      <tr
+        className={cn(
+          "relative border-b-[1px] border-l-[1px] border-[hsl(var(--border))]",
+          record.values.length > 1 && "border-l-blue-600",
+          differentFromOriginal && "border-l-green-600"
+        )}
+      >
+        <td className="pointer-events-none absolute left-0 top-0 m-0 h-full w-full p-0">
+          <Overlay className={cn(selectingRecord && "opacity-[0.15]")} />
+        </td>
+
+        <td className="w-12 pl-1 text-center font-mono">{index}</td>
+
+        <td className="w-[40%]">
+          <span className="text-sm text-slate-500">{record.defType}</span>
+          <span className="text-sm text-slate-500">:</span>
+          <span>
+            {record.defName}
+            {record.key}
+          </span>
+        </td>
+
+        <td className="relative m-0 p-0">
+          {language != mod.defaultLanguage && (
+            <div className="absolute left-[-34px] top-1 p-0">
+              <ButtonWithTooltip
+                buttonProps={{
+                  variant: "transparent",
+                  size: "none",
+                  onClick: () => setShowingOriginal((prev) => !prev),
+                }}
+                buttonContent={showingOriginal ? <Book /> : <BookTemplate />}
+                tooltipContent={<span>{showingOriginal ? "Show translation" : "Show original"}</span>}
+              />
+            </div>
+          )}
+          <div className="absolute left-[1px] top-1">
+            <ButtonWithTooltip
+              buttonProps={{
+                variant: "transparent",
+                size: "none",
+                onClick: onRecordRemove,
+                onMouseEnter: () => setSelectingRecord(true),
+                onFocus: () => setSelectingRecord(true),
+                onMouseLeave: () => setSelectingRecord(false),
+                onBlur: () => setSelectingRecord(false),
+              }}
+              buttonContent={<X />}
+              tooltipContent={<span>Remove record</span>}
+            />
+          </div>
+          <div className="">
+            {showingOriginal ? (
+              <div className="ml-[36px] border-x-[1px] border-[hsl(var(--border))] p-2">
+                {originalText || "No data"}
+              </div>
+            ) : (
+              <>
+                {record.values.length == 1 && (
+                  <div className="pl-[36px]">
+                    <AutoHeightTextArea
+                      index={0}
+                      values={record.values}
+                      onFinishEditing={(s) => updateValue(0, s || "")}
+                      onTextChange={checkDifference}
+                    />
+                  </div>
+                )}
+                {record.values.length > 1 && (
+                  <table className="w-full">
+                    <tbody>
+                      {record.values.map((_, i) => {
+                        return (
+                          <tr key={i} className="flex h-full w-full">
+                            <td className="mr-1 flex w-8">
+                              <div className="mb-[1px] mt-auto p-0">
+                                <ButtonWithTooltip
+                                  buttonProps={{
+                                    variant: "transparent",
+                                    size: "none",
+                                    onClick: () => removeValue(i),
+                                    onMouseEnter: () => setSelectingValue(i),
+                                    onFocus: () => setSelectingValue(i),
+                                    onMouseLeave: () => setSelectingValue(-1),
+                                    onBlur: () => setSelectingValue(-1),
+                                  }}
+                                  buttonContent={<Trash2 />}
+                                  tooltipContent={<span>Remove translation</span>}
+                                />
+                              </div>
+                            </td>
+                            <td className="relative h-full w-full p-0">
+                              <Overlay className={cn(selectingValue == i && "opacity-[0.15]")} />
+                              <div className={cn("h-full items-center", i == 0 && "min-h-[65px]")}>
+                                <AutoHeightTextArea
+                                  index={i}
+                                  values={record.values}
+                                  onFinishEditing={(s) => updateValue(0, s || "")}
+                                  onTextChange={checkDifference}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </>
+            )}
+          </div>
+        </td>
+      </tr>
+    </>
   );
 };
 
@@ -340,30 +304,31 @@ const TranslationTableControls = (props: { mod: Mod; language: Language; records
     <>
       <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(recordsState.length / keysPerPage)} />
 
-      <div className="flex flex-col content-center items-center bg-slate-900 text-slate-50">
+      <div className="flex flex-col content-center items-center bg-slate-950 text-slate-300">
         <span>
           {mod.name} @ {Language[language]}
         </span>
-        <div className="relative grid w-[80vw] grid-flow-row grid-cols-[36px_2fr_3fr] border-t-[1px] border-[hsl(var(--border))]">
-          {recordsState.slice(from, to).map((key, index) => (
-            <TranslationRow
-              key={`${key.id || -1}`}
-              currentKey={key}
-              defaultKey={key}
-              index={index + from + 1}
-              mod={mod}
-              language={language}
-              removeKey={() => {
-                if (typeof key.id !== "undefined") void dexieDb.translations.delete(key.id);
-                setRecordsState((r) => {
-                  r.splice(index + from, 1);
-                  return r;
-                });
-                triggerUpdate();
-              }}
-            />
-          ))}
-        </div>
+        <table className="w-[80vw] border-t-[1px] border-[hsl(var(--border))]">
+          <tbody>
+            {recordsState.slice(from, to).map((record, index) => (
+              <TranslationRow
+                key={`${record.id || -1}`}
+                record={record}
+                index={index + from + 1}
+                mod={mod}
+                language={language}
+                onRecordRemove={() => {
+                  if (typeof record.id !== "undefined") void dexieDb.translations.delete(record.id);
+                  setRecordsState((r) => {
+                    r.splice(index + from, 1);
+                    return r;
+                  });
+                  triggerUpdate();
+                }}
+              />
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(recordsState.length / keysPerPage)} />

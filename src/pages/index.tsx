@@ -44,7 +44,7 @@ const Home: NextPage = () => {
       <TranslationContextInit>
         <Header />
         <main
-          className="flex min-h-screen flex-col items-center justify-center bg-slate-900"
+          className="flex min-h-screen flex-col items-center justify-center bg-slate-950"
           onDragStart={verifyZoneOnFileDrop}
           onDragOver={verifyZoneOnFileDrop}
           onDrop={verifyZoneOnFileDrop}

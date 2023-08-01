@@ -1,6 +1,5 @@
-import { DBSchema, IDBPDatabase, IDBPObjectStore, deleteDB, openDB } from "idb";
-import { createContext, type Dispatch, type SetStateAction, useState, useEffect } from "react";
-import { ModRecord, dexieDb } from "~/lib/dexieDb";
+import { createContext, type Dispatch, type SetStateAction, useState } from "react";
+import { dexieDb } from "~/lib/dexieDb";
 import { useLocalStorage } from "~/lib/useLocalStorage";
 import { keysOfEnum } from "~/utils/enumUtils";
 
