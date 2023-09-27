@@ -64,7 +64,6 @@ export async function parseRimworldModDirectory(mod: Mod, directory: Directory, 
         versions.sort((a, b) => semver.compareBuild(b.version!, a.version!));
 
         const first = versions[0]?.name ?? "1.0";
-
         const toLoad: string[] = (loadFolders[first].li as object[]).map((a) => a.toString());
 
         if (toLoad.includes("/")) {
@@ -95,8 +94,6 @@ export async function parseRimworldModDirectory(mod: Mod, directory: Directory, 
       foldersWithDefs.push(...directory.directories.filter((d) => d.name === version));
     }
   }
-
-  console.log(foldersWithDefs);
 
   //find folders with translations
   const foldersWithDefTranslations: { language: Language; directory: Directory }[] = [];

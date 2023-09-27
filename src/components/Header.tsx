@@ -35,6 +35,24 @@ export const Header = () => {
     triggerUpdate();
   };
 
+  const purgeInvalid = () => {
+    if (!currentMod || currentLanguage == currentMod.defaultLanguage) return;
+    if (!currentMod.keys.has(currentLanguage)) currentMod.keys.set(currentLanguage, new Map());
+
+    const defaultKeys = currentMod.keys.get(currentMod.defaultLanguage);
+    if (!defaultKeys) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const currentKeys = currentMod.keys.get(currentLanguage)!;
+    for (const [hash] of currentKeys) {
+      if (defaultKeys.has(hash)) continue;
+
+      currentKeys.delete(hash);
+    }
+
+    triggerUpdate();
+  };
+
   return (
     <header className="fixed top-0 z-10 flex w-full flex-row gap-2 border-b-[1px] border-[hsl(var(--border))] bg-slate-900 p-3">
       <TooltipProvider delayDuration={400}>
@@ -44,6 +62,17 @@ export const Header = () => {
           </TooltipTrigger>
           <TooltipContent side="bottom" align="start">
             <span>{"Copy all non translated keys from default language to current"}</span>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <TooltipProvider delayDuration={400}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button onClick={purgeInvalid}>[ Purge ]</Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" align="start">
+            <span>{"Purge all invalid keys from current language"}</span>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

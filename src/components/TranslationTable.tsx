@@ -74,8 +74,9 @@ const TranslationRow = (props: {
   index: number;
   mod: Mod;
   removeKey: { (): void };
+  hasNoParent: boolean;
 }) => {
-  const { currentKey, defaultKey, index, mod, removeKey } = props;
+  const { currentKey, defaultKey, index, mod, removeKey, hasNoParent } = props;
   const { currentLanguage } = useContext(TranslationContext);
 
   const [values, setValues] = useState<string[]>(currentKey.values);
@@ -107,7 +108,8 @@ const TranslationRow = (props: {
         className={cn(
           "relative flex items-center justify-center border-b-[1px] border-l-[1px] border-[hsl(var(--border))]",
           invalid() && "border-l-blue-600",
-          changedFromDefault && "border-l-green-600"
+          changedFromDefault && "border-l-green-600",
+          hasNoParent && "border-l-purple-600"
         )}
       >
         <div
@@ -345,6 +347,7 @@ const TranslationTableControls = (props: {
                 langMap.delete(hash);
                 triggerUpdate();
               }}
+              hasNoParent={!defaultLangMap.has(hash)}
             />
           ))}
         </div>
