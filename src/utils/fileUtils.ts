@@ -66,7 +66,12 @@ export async function parseRimworldModDirectory(mod: Mod, directory: Directory, 
         const first = versions[0]?.name ?? "1.0";
 
         const toLoad: string[] = (loadFolders[first].li as object[]).map((a) => a.toString());
-        foldersWithDefs.push(...directory.directories.filter((d) => toLoad.includes(d.name)));
+
+        if (toLoad.includes("/")) {
+          foldersWithDefs.push(...directory.directories);
+        } else {
+          foldersWithDefs.push(...directory.directories.filter((d) => toLoad.includes(d.name)));
+        }
 
         parsed = true;
       } else if (xml.loadFolders[version]?.li) {
@@ -90,6 +95,8 @@ export async function parseRimworldModDirectory(mod: Mod, directory: Directory, 
       foldersWithDefs.push(...directory.directories.filter((d) => d.name === version));
     }
   }
+
+  console.log(foldersWithDefs);
 
   //find folders with translations
   const foldersWithDefTranslations: { language: Language; directory: Directory }[] = [];
