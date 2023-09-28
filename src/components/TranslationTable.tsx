@@ -5,6 +5,7 @@ import { X, Trash2, BookTemplate, Book } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { keysDb } from "~/utils/db";
+import { setToLocalStorage } from "~/utils/localstorageUtils";
 
 const AutoHeightTextArea = (props: {
   index: number;
@@ -320,9 +321,9 @@ const TranslationTableControls = (props: {
   langMap: Map<string, TranslationKey>;
   defaultLangMap: Map<string, TranslationKey>;
 }) => {
-  const { currentLanguage, updateOnTrigger, triggerUpdate } = useContext(TranslationContext);
+  const { currentLanguage, updateOnTrigger, triggerUpdate, startPage } = useContext(TranslationContext);
   const { mod, langMap, defaultLangMap } = props;
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(startPage);
 
   const keysPerPage = 25;
   const from = page * keysPerPage;
@@ -331,6 +332,14 @@ const TranslationTableControls = (props: {
   useEffect(() => {
     setPage((p) => Math.max(Math.min(p, Math.floor(langMap.size / keysPerPage)), 0));
   }, [mod, currentLanguage, page, langMap.size]);
+
+  useEffect(() => {
+    setToLocalStorage("currentPage", page);
+  }, [page]);
+
+  useEffect(() => {
+    setPage(startPage);
+  }, [startPage]);
 
   const array = new Array<[string, TranslationKey]>(50);
 

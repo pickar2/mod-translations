@@ -1,6 +1,7 @@
 import { createContext, type Dispatch, type SetStateAction, useState, useEffect } from "react";
 import { keysDb, modsDb } from "~/utils/db";
 import { keysOfEnum } from "~/utils/enumUtils";
+import { getFromLocalStorage, setToLocalStorage } from "~/utils/localstorageUtils";
 
 export enum Language {
   English,
@@ -40,6 +41,7 @@ export const TranslationContext = createContext<{
   addTranslation: {
     (mod: Mod, language: Language, defType: string, defName: string, key: string, values: string[]): void;
   };
+  startPage: number;
 }>(null!);
 
 export const TranslationContextInit = (props: { children: JSX.Element | JSX.Element[] }) => {
@@ -47,6 +49,7 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
   const [mods, setMods] = useState<Mod[]>([]);
   const [currentMod, setCurrentMod] = useState<Mod | undefined>();
   const [currentLanguage, setCurrentLanguage] = useState<Language>(Language.English);
+  const [startPage, setStartPage] = useState<number>(0);
 
   const triggerUpdate = () => setUpdateOnTrigger({});
 
@@ -108,11 +111,22 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
 
   useEffect(() => {
     const addedMods: Mod[] = [];
+    const page: number = getFromLocalStorage("currentPage") || 0;
+    const currentModId: string | undefined = getFromLocalStorage("currentModId");
+    const currentLanguageString: string | undefined = getFromLocalStorage("currentLanguage");
+    if (currentLanguageString) {
+      setCurrentLanguage(Language[currentLanguageString as keyof typeof Language]);
+    }
+
     void modsDb.mods
       .each((mod) => {
         addedMods.push(addMod(mod.modId, mod.modId, Language[mod.defaultLanguage as keyof typeof Language], true));
       })
       .then(async () => {
+        if (currentModId) {
+          const selectedMod = addedMods.find((mod) => mod.id === currentModId);
+          if (selectedMod) setCurrentMod(selectedMod);
+        }
         await keysDb.keys.each((key) => {
           const mod = addedMods.find((mod) => mod.id === key.modId);
           if (!mod) return;
@@ -126,9 +140,18 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
             true
           );
         });
+        setStartPage(page);
         triggerUpdate();
       });
   }, []);
+
+  useEffect(() => {
+    setToLocalStorage("currentModId", currentMod?.id);
+  }, [currentMod]);
+
+  useEffect(() => {
+    setToLocalStorage("currentModId", Language[currentLanguage]);
+  }, [currentLanguage]);
 
   return (
     <TranslationContext.Provider
@@ -143,6 +166,7 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
         setCurrentLanguage,
         addMod,
         addTranslation,
+        startPage,
       }}
     >
       {props.children}
