@@ -64,7 +64,12 @@ export async function parseRimworldModDirectory(mod: Mod, directory: Directory, 
         versions.sort((a, b) => semver.compareBuild(b.version!, a.version!));
 
         const first = versions[0]?.name ?? "1.0";
-        const toLoad: string[] = (loadFolders[first].li as object[]).map((a) => a.toString());
+        let toLoad: string[] = ["/"];
+        if (Array.isArray(loadFolders[first].li)) {
+          toLoad = (loadFolders[first].li as object[]).map((a) => a.toString());
+        } else {
+          toLoad = [(loadFolders[first].li as object).toString()];
+        }
 
         if (toLoad.includes("/")) {
           foldersWithDefs.push(...directory.directories);
