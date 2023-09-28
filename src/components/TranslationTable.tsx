@@ -4,6 +4,7 @@ import { Button } from "./ui/transparentButton";
 import { X, Trash2, BookTemplate, Book } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { keysDb } from "~/utils/db";
 
 const AutoHeightTextArea = (props: {
   index: number;
@@ -94,8 +95,23 @@ const TranslationRow = (props: {
 
   useEffect(() => {
     currentKey.values = values;
+    updateValuesInDb();
     setChangedFromDefault(isChangedFromDefault(values[0]));
   }, [values]);
+
+  const updateValuesInDb = () => {
+    void keysDb.keys
+      // .where({
+      //   modId: mod.id,
+      //   language: Language[currentLanguage],
+      //   hash: `${currentKey.defType}${currentKey.defName}${currentKey.key}`,
+      // })
+      .where("[modId+language+hash]")
+      .equals([mod.id, Language[currentLanguage], `${currentKey.defType}${currentKey.defName}${currentKey.key}`])
+      .modify((value, ref) => {
+        ref.value.translationKey = currentKey;
+      });
+  };
 
   const [showingDefault, setShowingDefault] = useState(false);
 
@@ -261,6 +277,7 @@ const TranslationRow = (props: {
                       }}
                       onFinishEditing={(s) => {
                         currentKey.values[i] = s ?? "";
+                        updateValuesInDb();
                       }}
                     />
                   </div>

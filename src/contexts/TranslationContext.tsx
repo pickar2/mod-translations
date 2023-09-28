@@ -1,4 +1,5 @@
-import { createContext, type Dispatch, type SetStateAction, useState } from "react";
+import { createContext, type Dispatch, type SetStateAction, useState, useEffect } from "react";
+import { keysDb, modsDb } from "~/utils/db";
 import { keysOfEnum } from "~/utils/enumUtils";
 
 export enum Language {
@@ -49,7 +50,7 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
 
   const triggerUpdate = () => setUpdateOnTrigger({});
 
-  const addMod = (name: string, id: string, defaultLanguage: Language): Mod => {
+  const addMod = (name: string, id: string, defaultLanguage: Language, fromDb = false): Mod => {
     let mod = mods.find((mod) => mod.id === id);
     if (!mod) {
       const map = new Map<Language, Map<string, TranslationKey>>();
@@ -57,6 +58,8 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
       mod = { name, id, defaultLanguage, keys: map };
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       setMods((prev) => [...prev, mod!]);
+
+      if (!fromDb) void modsDb.mods.add({ modId: id, defaultLanguage: Language[defaultLanguage] });
     }
     setCurrentMod(mod);
 
@@ -69,22 +72,63 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
     defType: string,
     defName: string,
     key: string,
-    values: string[]
+    values: string[],
+    fromDb = false
   ): void => {
     if (!mod.keys.has(language)) mod.keys.set(language, new Map());
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const languageKeys = mod.keys.get(language)!;
+    const hash = `${defType}${defName}${key}`;
 
-    const translationKey = languageKeys.get(defType + defName + key);
+    const translationKey = languageKeys.get(hash);
     if (!translationKey) {
-      languageKeys.set(defType + defName + key, { key, defType, defName, values });
+      languageKeys.set(hash, { key, defType, defName, values });
+      if (!fromDb)
+        void keysDb.keys.add({
+          hash: hash,
+          modId: mod.id,
+          language: Language[language],
+          translationKey: { key, defType, defName, values },
+        });
     } else {
       for (const value of values) {
         if (translationKey.values.find((v) => v === value)) continue;
         translationKey.values.push(value);
       }
+      if (!fromDb)
+        void keysDb.keys
+          .where("[modId+language+hash]")
+          .equals([mod.id, Language[language], hash])
+          // .where({ modId: mod.id, language: Language[language], hash: hash })
+          .modify((value, ref) => {
+            ref.value.translationKey = translationKey;
+          });
     }
   };
+
+  useEffect(() => {
+    const addedMods: Mod[] = [];
+    void modsDb.mods
+      .each((mod) => {
+        addedMods.push(addMod(mod.modId, mod.modId, Language[mod.defaultLanguage as keyof typeof Language], true));
+      })
+      .then(async () => {
+        await keysDb.keys.each((key) => {
+          const mod = addedMods.find((mod) => mod.id === key.modId);
+          if (!mod) return;
+          addTranslation(
+            mod,
+            Language[key.language as keyof typeof Language],
+            key.translationKey.defType,
+            key.translationKey.defName,
+            key.translationKey.key,
+            key.translationKey.values,
+            true
+          );
+        });
+        triggerUpdate();
+      });
+  }, []);
 
   return (
     <TranslationContext.Provider
