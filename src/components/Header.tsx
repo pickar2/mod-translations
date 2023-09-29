@@ -6,9 +6,10 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { cn } from "~/lib/utils";
 import { compileTranslations } from "~/utils/zipUtils";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
+import { removeKeyFromDb, removeModFromDb, updateTranslationInDb } from "~/utils/db";
 
 export const Header = () => {
-  const { setCurrentLanguage, currentMod, currentLanguage, triggerUpdate, setCurrentMod, mods } =
+  const { setCurrentLanguage, currentMod, currentLanguage, triggerUpdate, setCurrentMod, mods, setMods } =
     useContext(TranslationContext);
 
   const copyNotTranslated = () => {
@@ -44,13 +45,42 @@ export const Header = () => {
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const currentKeys = currentMod.keys.get(currentLanguage)!;
-    for (const [hash] of currentKeys) {
-      if (defaultKeys.has(hash)) continue;
+    for (const [hash, key] of currentKeys) {
+      // remove all unused keys
+      if (!defaultKeys.has(hash)) {
+        currentKeys.delete(hash);
+        removeKeyFromDb(currentMod, currentLanguage, hash);
 
-      currentKeys.delete(hash);
+        continue;
+      }
+
+      // remove translations that are the same as original when translated variant exists
+      if (key.values.length > 1) {
+        const defaultValue = currentMod.keys.get(currentMod.defaultLanguage)?.get(hash)?.values[0];
+        if (defaultValue) {
+          key.values = key.values.filter((v) => v !== defaultValue);
+          if (key.values.length > 0) {
+            updateTranslationInDb(currentMod, currentLanguage, hash, key.values);
+          } else {
+            currentKeys.delete(hash);
+            removeKeyFromDb(currentMod, currentLanguage, hash);
+          }
+        }
+      }
     }
+    setCurrentMod(currentMod);
 
     triggerUpdate();
+  };
+
+  const deleteCurrentMod = () => {
+    if (!currentMod) return;
+    setMods((prev) => {
+      const newMods = prev.filter((m) => m !== currentMod);
+      removeModFromDb(currentMod);
+      setCurrentMod(newMods[newMods.length - 1]);
+      return newMods;
+    });
   };
 
   return (
@@ -139,6 +169,19 @@ export const Header = () => {
           </SelectGroup>
         </SelectContent>
       </Select>
+
+      <div className="absolute right-1">
+        <TooltipProvider delayDuration={400}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={deleteCurrentMod}>[ Delete mod ]</Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start">
+              <span>{"Delete current mod"}</span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </header>
   );
 };

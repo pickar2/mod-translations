@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import { type TranslationKey } from "~/contexts/TranslationContext";
+import { Language, Mod, type TranslationKey } from "~/contexts/TranslationContext";
 
 export interface DbKey {
   id?: number;
@@ -44,3 +44,20 @@ export class ModsDb extends Dexie {
 }
 
 export const modsDb = new ModsDb();
+
+export const updateTranslationInDb = (mod: Mod, language: Language, hash: string, values: string[]) => {
+  void keysDb.keys
+    .where("[modId+language+hash]")
+    .equals([mod.id, Language[language], hash])
+    .modify((value, ref) => {
+      ref.value.translationKey.values = values;
+    });
+};
+
+export const removeKeyFromDb = (mod: Mod, language: Language, hash: string) => {
+  void keysDb.keys.where("[modId+language+hash]").equals([mod.id, Language[language], hash]).delete();
+};
+
+export const removeModFromDb = (mod: Mod) => {
+  void modsDb.mods.filter((dbMod) => dbMod.modId == mod.id).delete();
+};

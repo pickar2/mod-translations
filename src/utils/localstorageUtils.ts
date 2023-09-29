@@ -1,7 +1,7 @@
 export function getFromLocalStorage<T>(key: string): T | undefined {
   if (typeof window === "undefined") return undefined;
   const item = localStorage.getItem(key);
-  if (!item) return undefined;
+  if (!item || item === "undefined") return undefined;
   return JSON.parse(item) as T | undefined;
 }
 

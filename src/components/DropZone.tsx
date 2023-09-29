@@ -6,6 +6,8 @@ import { parseFiles, type Directory, findRimworldMods, parseRimworldModDirectory
 import { findDefs, findAllTranslatableKeys, XmlParser } from "~/utils/xmlUtils";
 import { Language, type Mod, TranslationContext, type TranslationKey } from "../contexts/TranslationContext";
 import { cn } from "~/lib/utils";
+import { Switch } from "./ui/switch";
+import { Label } from "./ui/label";
 
 export const verifyZoneOnFileDrop = (event: React.DragEvent<HTMLElement>) => {
   if ((event.target as HTMLElement).matches(".dropzone")) {
@@ -21,10 +23,16 @@ const Loading = () => {
   return <div className="absolute right-6 top-6 text-2xl text-slate-100">Loading...</div>;
 };
 
+type Settings = {
+  loadIntoCurrent: boolean;
+  deleteDuplicateMods: boolean;
+};
+
 export const DropZone = () => {
-  const { mods, addMod, addTranslation, triggerUpdate } = useContext(TranslationContext);
+  const { mods, addMod, addTranslation, triggerUpdate, currentMod } = useContext(TranslationContext);
   const [dropping, setDropping] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [settings, setSettings] = useState<Settings>({ loadIntoCurrent: false, deleteDuplicateMods: false });
 
   async function processDrop(e: React.DragEvent<HTMLElement>) {
     e.preventDefault();
@@ -36,12 +44,13 @@ export const DropZone = () => {
     const modDirectories = await findRimworldMods(root, "default");
     const modsWithDir: { mod: Mod; directory: Directory }[] = modDirectories.map((mDir) => {
       let mod = mods.find((m) => m.id === mDir.modId);
-      if (!mod) mod = addMod(mDir.modId, mDir.modId, Language.English);
+      if (!mod) mod = (settings.loadIntoCurrent && currentMod) || addMod(mDir.modId, mDir.modId, Language.English);
       return { mod: mod, directory: mDir.directory };
     });
 
     for (const modEntry of modsWithDir) {
-      const parsed = await parseRimworldModDirectory(modEntry.mod, modEntry.directory, "@latest");
+      const modOverride = (settings.loadIntoCurrent && currentMod) || modEntry.mod;
+      const parsed = await parseRimworldModDirectory(modOverride, modEntry.directory, "@latest");
       const queue: File[] = [];
 
       function addFilesToQueue(directory: Directory) {
@@ -74,7 +83,7 @@ export const DropZone = () => {
         }
       }
       for (const key of newTranslationKeys) {
-        addTranslation(modEntry.mod, modEntry.mod.defaultLanguage, key.defType, key.defName, key.key, key.values);
+        addTranslation(modOverride, modOverride.defaultLanguage, key.defType, key.defName, key.key, key.values);
       }
 
       for (const folder of parsed.foldersWithDefTranslations) {
@@ -109,7 +118,7 @@ export const DropZone = () => {
           }
 
           for (const key of newTranslationKeys) {
-            addTranslation(modEntry.mod, folder.language, key.defType, key.defName, key.key, key.values);
+            addTranslation(modOverride, folder.language, key.defType, key.defName, key.key, key.values);
           }
         }
       }
@@ -137,7 +146,7 @@ export const DropZone = () => {
         }
 
         for (const key of newTranslationKeys) {
-          addTranslation(modEntry.mod, folder.language, key.defType, key.defName, key.key, key.values);
+          addTranslation(modOverride, folder.language, key.defType, key.defName, key.key, key.values);
         }
       }
     }
@@ -148,7 +157,7 @@ export const DropZone = () => {
   return (
     <>
       {loading && <Loading />}
-      <div className={`flex items-center p-0`}>
+      <div className={`relative flex items-center p-0`}>
         <div
           className={cn(
             `dropzone flex items-center rounded-2xl border-[1px] border-[hsl(var(--border))] bg-slate-800 p-14`,
@@ -164,6 +173,32 @@ export const DropZone = () => {
             void processDrop(e);
           }}
         ></div>
+        <div className="absolute right-[-69%] flex flex-col space-y-1">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="load-into-current"
+              onCheckedChange={(state) => {
+                setSettings((prev) => {
+                  prev.loadIntoCurrent = state;
+                  return prev;
+                });
+              }}
+            />
+            <Label htmlFor="load-into-current">Load into current mod</Label>
+          </div>
+          {/* <div className="flex items-center space-x-2">
+            <Switch
+              id="delete-duplicate-mods"
+              onCheckedChange={(state) => {
+                setSettings((prev) => {
+                  prev.deleteDuplicateMods = state;
+                  return prev;
+                });
+              }}
+            />
+            <Label htmlFor="delete-duplicate-mods">Delete duplicate mods</Label>
+          </div> */}
+        </div>
       </div>
     </>
   );

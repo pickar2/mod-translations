@@ -4,8 +4,8 @@ import { Button } from "./ui/transparentButton";
 import { X, Trash2, BookTemplate, Book } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { keysDb } from "~/utils/db";
-import { setToLocalStorage } from "~/utils/localstorageUtils";
+import { keysDb, updateTranslationInDb } from "~/utils/db";
+import { setToLocalStorage } from "~/utils/localStorageUtils";
 
 const AutoHeightTextArea = (props: {
   index: number;
@@ -84,7 +84,7 @@ const TranslationRow = (props: {
   const [values, setValues] = useState<string[]>(currentKey.values);
   useEffect(() => {
     setValues(currentKey.values);
-  }, [currentLanguage]);
+  }, [currentKey.values, currentLanguage]);
 
   const invalid = () => values.length > 1;
   function isChangedFromDefault(currentValue: string | undefined): boolean {
@@ -96,23 +96,9 @@ const TranslationRow = (props: {
 
   useEffect(() => {
     currentKey.values = values;
-    updateValuesInDb();
-    setChangedFromDefault(isChangedFromDefault(values[0]));
+    updateTranslationInDb(mod, currentLanguage, `${currentKey.defType}${currentKey.defName}${currentKey.key}`, values);
+    if (!invalid()) setChangedFromDefault(isChangedFromDefault(values[0]));
   }, [values]);
-
-  const updateValuesInDb = () => {
-    void keysDb.keys
-      // .where({
-      //   modId: mod.id,
-      //   language: Language[currentLanguage],
-      //   hash: `${currentKey.defType}${currentKey.defName}${currentKey.key}`,
-      // })
-      .where("[modId+language+hash]")
-      .equals([mod.id, Language[currentLanguage], `${currentKey.defType}${currentKey.defName}${currentKey.key}`])
-      .modify((value, ref) => {
-        ref.value.translationKey = currentKey;
-      });
-  };
 
   const [showingDefault, setShowingDefault] = useState(false);
 
@@ -277,8 +263,16 @@ const TranslationRow = (props: {
                         setChangedFromDefault(isChangedFromDefault(s));
                       }}
                       onFinishEditing={(s) => {
-                        currentKey.values[i] = s ?? "";
-                        updateValuesInDb();
+                        setValues((prev) => {
+                          prev[i] = s ?? "";
+                          return prev;
+                        });
+                        updateTranslationInDb(
+                          mod,
+                          currentLanguage,
+                          `${currentKey.defType}${currentKey.defName}${currentKey.key}`,
+                          values
+                        );
                       }}
                     />
                   </div>

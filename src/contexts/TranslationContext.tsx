@@ -1,7 +1,7 @@
 import { createContext, type Dispatch, type SetStateAction, useState, useEffect } from "react";
-import { keysDb, modsDb } from "~/utils/db";
+import { keysDb, modsDb, updateTranslationInDb } from "~/utils/db";
 import { keysOfEnum } from "~/utils/enumUtils";
-import { getFromLocalStorage, setToLocalStorage } from "~/utils/localstorageUtils";
+import { getFromLocalStorage, setToLocalStorage } from "~/utils/localStorageUtils";
 
 export enum Language {
   English,
@@ -98,14 +98,7 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
         if (translationKey.values.find((v) => v === value)) continue;
         translationKey.values.push(value);
       }
-      if (!fromDb)
-        void keysDb.keys
-          .where("[modId+language+hash]")
-          .equals([mod.id, Language[language], hash])
-          // .where({ modId: mod.id, language: Language[language], hash: hash })
-          .modify((value, ref) => {
-            ref.value.translationKey = translationKey;
-          });
+      if (!fromDb) updateTranslationInDb(mod, language, hash, translationKey.values);
     }
   };
 
@@ -150,7 +143,7 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
   }, [currentMod]);
 
   useEffect(() => {
-    setToLocalStorage("currentModId", Language[currentLanguage]);
+    setToLocalStorage("currentLanguage", Language[currentLanguage]);
   }, [currentLanguage]);
 
   return (
