@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { cn } from "~/lib/utils";
 import { compileTranslations } from "~/utils/zipUtils";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
-import { removeKeyFromDb, removeModFromDb, updateTranslationInDb } from "~/utils/db";
+import { clearLanguageInDb, removeKeyFromDb, removeModFromDb, updateTranslationInDb } from "~/utils/db";
 import { getFromLocalStorage, setToLocalStorage } from "~/utils/localStorageUtils";
 import { useLocalStorage } from "@uidotdev/usehooks";
 
@@ -85,6 +85,13 @@ export const Header = () => {
       setCurrentMod(newMods[newMods.length - 1]);
       return newMods;
     });
+  };
+
+  const clearCurrentLanguage = () => {
+    if (!currentMod) return;
+    currentMod.keys.delete(currentLanguage);
+    clearLanguageInDb(currentMod, currentLanguage);
+    triggerUpdate();
   };
 
   return (
@@ -192,6 +199,17 @@ export const Header = () => {
             </SelectGroup>
           </SelectContent>
         </Select>
+
+        <TooltipProvider delayDuration={400}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={clearCurrentLanguage}>[ Clear language ]</Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start">
+              <span>{"Remove language from mod's translation"}</span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         <TooltipProvider delayDuration={400}>
           <Tooltip>

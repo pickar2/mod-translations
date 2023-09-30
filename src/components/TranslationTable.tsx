@@ -77,9 +77,9 @@ const TranslationRow = (props: {
   index: number;
   mod: Mod;
   removeKey: { (): void };
-  // hasNoParent: boolean;
+  onKeyUpdate: { (): void };
 }) => {
-  const { currentKey, index, mod, removeKey } = props;
+  const { currentKey, index, mod, removeKey, onKeyUpdate } = props;
   const { currentLanguage } = useContext(TranslationContext);
   const defaultKey = props.defaultKey || props.currentKey;
   const hasNoParent = props.defaultKey === undefined;
@@ -101,6 +101,7 @@ const TranslationRow = (props: {
     currentKey.values = values;
     updateTranslationInDb(mod, currentLanguage, `${currentKey.defType}${currentKey.defName}${currentKey.key}`, values);
     if (!invalid()) setChangedFromDefault(isChangedFromDefault(values[0]));
+    onKeyUpdate();
   }, [values]);
 
   const [showingDefault, setShowingDefault] = useState(false);
@@ -276,6 +277,7 @@ const TranslationRow = (props: {
                           `${currentKey.defType}${currentKey.defName}${currentKey.key}`,
                           values
                         );
+                        onKeyUpdate();
                       }}
                     />
                   </div>
@@ -289,17 +291,28 @@ const TranslationRow = (props: {
   );
 };
 
-const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateAction<number>>; buttonCount: number }) => {
-  const { page, setPage, buttonCount } = props;
+enum PageState {
+  HasUntranslatedKeys, // red
+  HasInvalidKeys, // purple
+  HasConflicts, // blue
+  AllTranslated, // default
+}
+
+const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateAction<number>>; states: PageState[] }) => {
+  const { page, setPage, states } = props;
   return (
     <div className="flex flex-row flex-wrap ">
-      {[...(Array(buttonCount) as void[])].map((_, i) => (
+      {states.map((state, i) => (
         <button
           key={i}
           className={cn(
             `mb-1 mr-1 flex w-8 cursor-pointer select-none items-center justify-center border-[1px] border-[hsl(var(--border))]
              bg-slate-900 px-2 py-1 text-slate-50 outline-none transition-colors hover:bg-slate-800 focus-visible:bg-slate-800`,
-            page == i && "border-b-slate-200"
+            page == i && "border-b-slate-200",
+            state == PageState.AllTranslated && "border-t-green-600",
+            state == PageState.HasConflicts && "border-t-blue-600",
+            state == PageState.HasInvalidKeys && "border-t-purple-600",
+            state == PageState.HasUntranslatedKeys && "border-t-red-600"
           )}
           onClick={() => {
             setPage(i);
@@ -323,6 +336,8 @@ const TranslationTableControls = (props: {
   const [page, setPage] = useState(startPage);
   const [keysPerPage] = useLocalStorage("keysPerPage", 25);
 
+  const [pageStates, setPageStates] = useState<PageState[]>([]);
+
   const from = page * keysPerPage;
   const to = (page + 1) * keysPerPage;
 
@@ -338,6 +353,29 @@ const TranslationTableControls = (props: {
     setPage(startPage);
   }, [startPage]);
 
+  useEffect(() => {
+    const states = new Array<PageState>(Math.ceil(langMap.size / keysPerPage)).fill(PageState.AllTranslated);
+    let currentPage = 0;
+    let i = 0;
+    for (const [hash, key] of langMap) {
+      if (!defaultLangMap.has(hash)) {
+        states[currentPage] = Math.min(states[currentPage]!, PageState.HasInvalidKeys);
+      }
+      if (key.values.length !== 1) {
+        states[currentPage] = Math.min(states[currentPage]!, PageState.HasConflicts);
+      }
+      if (key.values.filter((k) => k !== defaultLangMap.get(hash)?.values[0]).length == 0) {
+        states[currentPage] = Math.min(states[currentPage]!, PageState.HasUntranslatedKeys);
+      }
+
+      if (++i == keysPerPage) {
+        i = 0;
+        currentPage++;
+      }
+    }
+    setPageStates(states);
+  }, [mod, currentLanguage, defaultLangMap, langMap, langMap.size, keysPerPage]);
+
   const array = new Array<[string, TranslationKey]>(50);
 
   let i = 0;
@@ -352,7 +390,7 @@ const TranslationTableControls = (props: {
 
   return (
     <>
-      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(langMap.size / keysPerPage)} />
+      <PaginationButtons page={page} setPage={setPage} states={pageStates} />
 
       <div className="flex flex-col content-center items-center bg-slate-900 text-slate-50">
         <span>
@@ -371,12 +409,35 @@ const TranslationTableControls = (props: {
                 removeKeyFromDb(mod, currentLanguage, hash);
                 triggerUpdate();
               }}
+              onKeyUpdate={() => {
+                const states = pageStates;
+                states[page] = PageState.AllTranslated;
+
+                let i = 0;
+                for (const [hash, key] of langMap) {
+                  if (i >= from) {
+                    if (!defaultLangMap.has(hash)) {
+                      states[page] = Math.min(states[page]!, PageState.HasInvalidKeys);
+                    }
+                    if (key.values.length !== 1) {
+                      states[page] = Math.min(states[page]!, PageState.HasConflicts);
+                    }
+                    if (key.values.filter((k) => k !== defaultLangMap.get(hash)?.values[0]).length == 0) {
+                      states[page] = Math.min(states[page]!, PageState.HasUntranslatedKeys);
+                    }
+                  }
+                  i++;
+                  if (i >= to) break;
+                }
+
+                setPageStates([...states]);
+              }}
             />
           ))}
         </div>
       </div>
 
-      <PaginationButtons page={page} setPage={setPage} buttonCount={Math.ceil(langMap.size / keysPerPage)} />
+      <PaginationButtons page={page} setPage={setPage} states={pageStates} />
     </>
   );
 };
