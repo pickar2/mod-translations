@@ -7,10 +7,14 @@ import { cn } from "~/lib/utils";
 import { compileTranslations } from "~/utils/zipUtils";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
 import { removeKeyFromDb, removeModFromDb, updateTranslationInDb } from "~/utils/db";
+import { getFromLocalStorage, setToLocalStorage } from "~/utils/localStorageUtils";
+import { useLocalStorage } from "@uidotdev/usehooks";
 
 export const Header = () => {
   const { setCurrentLanguage, currentMod, currentLanguage, triggerUpdate, setCurrentMod, mods, setMods } =
     useContext(TranslationContext);
+
+  const [keysPerPage, setKeysPerPage] = useLocalStorage("keysPerPage", 25);
 
   const copyNotTranslated = () => {
     if (!currentMod || currentLanguage == currentMod.defaultLanguage) return;
@@ -170,7 +174,25 @@ export const Header = () => {
         </SelectContent>
       </Select>
 
-      <div className="absolute right-1">
+      <div className="absolute right-1 flex gap-2">
+        <Select value={keysPerPage.toString()} onValueChange={(v) => setKeysPerPage(parseInt(v))}>
+          <SelectTrigger className={cn("w-auto")}>
+            <span className="mr-1">{"Keys per page:"}</span>
+            <SelectValue placeholder="" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {[10, 25, 50, 100, 200].map((v) => {
+                return (
+                  <SelectItem value={v.toString()} key={v}>
+                    {v}
+                  </SelectItem>
+                );
+              })}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
         <TooltipProvider delayDuration={400}>
           <Tooltip>
             <TooltipTrigger asChild>

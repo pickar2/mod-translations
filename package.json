@@ -24,6 +24,7 @@
     "@trpc/server": "^10.36.0",
     "@types/file-saver": "^2.0.5",
     "@types/semver": "^7.5.0",
+    "@uidotdev/usehooks": "^2.3.1",
     "class-variance-authority": "^0.5.3",
     "clsx": "^1.2.1",
     "dexie": "^3.2.4",

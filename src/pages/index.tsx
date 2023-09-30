@@ -18,6 +18,7 @@ import { TranslationTable } from "~/components/TranslationTable";
 import { TranslationContextInit } from "~/contexts/TranslationContext";
 import { cn } from "~/lib/utils";
 import { api } from "~/utils/api";
+import NoSsr from "~/components/NoSsr";
 
 const Home: NextPage = () => {
   // const hello = api.example.hello.useQuery({ text: "from tRPC" });
@@ -42,7 +43,9 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <TranslationContextInit>
-        <Header />
+        <NoSsr>
+          <Header />
+        </NoSsr>
         <main
           className="flex min-h-screen flex-col items-center justify-center bg-slate-900"
           onDragStart={verifyZoneOnFileDrop}
