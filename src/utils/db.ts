@@ -59,5 +59,6 @@ export const removeKeyFromDb = (mod: Mod, language: Language, hash: string) => {
 };
 
 export const removeModFromDb = (mod: Mod) => {
+  void keysDb.keys.where({ modId: mod.id }).delete();
   void modsDb.mods.filter((dbMod) => dbMod.modId == mod.id).delete();
 };

@@ -4,7 +4,7 @@ import { Button } from "./ui/transparentButton";
 import { X, Trash2, BookTemplate, Book } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { keysDb, updateTranslationInDb } from "~/utils/db";
+import { keysDb, removeKeyFromDb, updateTranslationInDb } from "~/utils/db";
 import { setToLocalStorage } from "~/utils/localStorageUtils";
 
 const AutoHeightTextArea = (props: {
@@ -72,14 +72,16 @@ const AutoHeightTextArea = (props: {
 
 const TranslationRow = (props: {
   currentKey: TranslationKey;
-  defaultKey: TranslationKey;
+  defaultKey: TranslationKey | undefined;
   index: number;
   mod: Mod;
   removeKey: { (): void };
-  hasNoParent: boolean;
+  // hasNoParent: boolean;
 }) => {
-  const { currentKey, defaultKey, index, mod, removeKey, hasNoParent } = props;
+  const { currentKey, index, mod, removeKey } = props;
   const { currentLanguage } = useContext(TranslationContext);
+  const defaultKey = props.defaultKey || props.currentKey;
+  const hasNoParent = props.defaultKey === undefined;
 
   const [values, setValues] = useState<string[]>(currentKey.values);
   useEffect(() => {
@@ -360,14 +362,14 @@ const TranslationTableControls = (props: {
             <TranslationRow
               key={`${hash}${currentLanguage}`}
               currentKey={key}
-              defaultKey={defaultLangMap.get(hash) ?? key}
+              defaultKey={defaultLangMap.get(hash)}
               index={index + from + 1}
               mod={mod}
               removeKey={() => {
                 langMap.delete(hash);
+                removeKeyFromDb(mod, currentLanguage, hash);
                 triggerUpdate();
               }}
-              hasNoParent={!defaultLangMap.has(hash)}
             />
           ))}
         </div>
