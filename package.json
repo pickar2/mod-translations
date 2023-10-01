@@ -41,6 +41,8 @@
     "react-dom": "18.2.0",
     "react-icons": "^4.10.1",
     "react-redux": "^8.1.2",
+    "react-virtuoso": "^4.6.0",
+    "react-waypoint": "^10.3.0",
     "semver": "^7.5.4",
     "superjson": "1.12.2",
     "tailwind-merge": "^1.14.0",

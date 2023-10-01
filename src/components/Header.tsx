@@ -201,7 +201,7 @@ export const Header = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {[10, 25, 50, 100, 200].map((v) => {
+              {[10, 25, 50, 100, 200, 500, 1000].map((v) => {
                 return (
                   <SelectItem value={v.toString()} key={v}>
                     {v}

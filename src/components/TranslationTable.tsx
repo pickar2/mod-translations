@@ -7,6 +7,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/t
 import { DbKey, keysDb, removeKeyFromDb, updateTranslationInDb } from "~/utils/db";
 import { getFromLocalStorage, setToLocalStorage } from "~/utils/localStorageUtils";
 import { useLocalStorage } from "@uidotdev/usehooks";
+import { Virtuoso, Components } from "react-virtuoso";
+import { Waypoint } from "react-waypoint";
 
 const AutoHeightTextArea = (props: {
   index: number;
@@ -34,40 +36,46 @@ const AutoHeightTextArea = (props: {
   }, []);
 
   return (
-    <div
-      className={cn(
-        "transition-border flex h-full w-full items-center border-x-[1px]  border-[hsl(var(--border))]",
-        index != values.length - 1 && "border-b-[1px]",
-        editingIndex == index && "border-x-slate-200"
-      )}
-    >
-      <textarea
-        ref={textAreaRef}
-        className={`flex w-full resize-none items-center overflow-hidden bg-slate-900 p-2 outline-none transition-colors hover:bg-slate-800 focus:bg-slate-800 `}
-        style={{ height: defaultHeight }}
-        placeholder="Translation"
-        wrap="soft"
-        defaultValue={values[index]}
-        rows={1}
-        spellCheck={false}
-        onChange={(e) => {
-          updateHeight(e.currentTarget);
-          onTextChange(e.currentTarget.value);
-        }}
-        onFocus={() => {
-          setEditingIndex(index);
-          // onUpdate(e.currentTarget.value);
-        }}
-        onBlur={(e) => {
-          setEditingIndex(-1);
-          onFinishEditing(e.currentTarget.value);
-          // onUpdate(e.currentTarget.value);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") e.currentTarget.blur();
-        }}
-      />
-    </div>
+    <Waypoint onEnter={() => updateHeight(textAreaRef.current)}>
+      <div
+        className={cn(
+          "transition-border flex h-full w-full items-center border-x-[1px]  border-[hsl(var(--border))]",
+          index != values.length - 1 && "border-b-[1px]",
+          editingIndex == index && "border-x-slate-200"
+        )}
+      >
+        <textarea
+          ref={textAreaRef}
+          className={`flex w-full resize-none items-center overflow-hidden bg-slate-900 p-2 outline-none transition-colors hover:bg-slate-800 focus:bg-slate-800 `}
+          style={{ height: defaultHeight }}
+          placeholder="Translation"
+          wrap="soft"
+          defaultValue={values[index]}
+          rows={1}
+          spellCheck={false}
+          onChange={(e) => {
+            updateHeight(e.currentTarget);
+            onTextChange(e.currentTarget.value);
+          }}
+          onFocus={(e) => {
+            updateHeight(e.currentTarget);
+            setEditingIndex(index);
+            // onUpdate(e.currentTarget.value);
+          }}
+          onBlur={(e) => {
+            setEditingIndex(-1);
+            onFinishEditing(e.currentTarget.value);
+            // onUpdate(e.currentTarget.value);
+          }}
+          // onMouseEnter={(e) => {
+          //   updateHeight(e.currentTarget);
+          // }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") e.currentTarget.blur();
+          }}
+        />
+      </div>
+    </Waypoint>
   );
 };
 
@@ -84,250 +92,242 @@ const TranslationRow = (props: {
   const defaultKey = props.defaultKey || props.currentKey;
   const hasNoParent = props.defaultKey === undefined;
 
-  const [values, setValues] = useState<string[]>(currentKey.values);
-  useEffect(() => {
-    setValues(currentKey.values);
-  }, [currentKey.values, currentLanguage]);
-
-  const invalid = () => values.length > 1;
+  const invalid = () => currentKey.values.length > 1;
   function isChangedFromDefault(currentValue: string | undefined): boolean {
     if (currentLanguage == mod.defaultLanguage || invalid()) return false;
     return currentValue !== defaultKey.values[0];
   }
 
-  const [changedFromDefault, setChangedFromDefault] = useState(isChangedFromDefault(values[0]));
-
-  useEffect(() => {
-    currentKey.values = values;
-    updateTranslationInDb(mod, currentLanguage, `${currentKey.defType}${currentKey.defName}${currentKey.key}`, values);
-    if (!invalid()) setChangedFromDefault(isChangedFromDefault(values[0]));
-    onKeyUpdate();
-  }, [values]);
+  const [changedFromDefault, setChangedFromDefault] = useState(isChangedFromDefault(currentKey.values[0]));
 
   const [showingDefault, setShowingDefault] = useState(false);
 
   const [selectingKey, setSelectingKey] = useState(false);
   const [selectingValue, setSelectingValue] = useState(-1);
 
+  const initial = `${currentKey.defType}:${currentKey.defName}${currentKey.key}`;
+  const keyStrings = [initial];
+  let last = keyStrings[keyStrings.length - 1];
+  while (last && last.length > 64) {
+    let dotLocation = -1;
+    for (let i = 64; i > 0; i--) {
+      if (last.charAt(i) === ".") {
+        dotLocation = i;
+        break;
+      }
+    }
+    if (dotLocation == -1) break;
+    keyStrings[keyStrings.length - 1] = last.substring(0, dotLocation);
+    keyStrings.push(last.substring(dotLocation));
+    last = keyStrings[keyStrings.length - 1];
+  }
+
   return (
-    <>
+    <div
+      className={cn(
+        "relative flex border-b-[1px] border-l-[1px] border-b-[hsl(var(--border))] border-l-red-600",
+        invalid() && "border-l-blue-600",
+        changedFromDefault && "border-l-green-600",
+        hasNoParent && "border-l-purple-600"
+      )}
+    >
       <div
         className={cn(
-          "relative flex items-center justify-center border-b-[1px] border-l-[1px] border-[hsl(var(--border))]",
-          invalid() && "border-l-blue-600",
-          changedFromDefault && "border-l-green-600",
-          hasNoParent && "border-l-purple-600"
+          "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
+          selectingKey && "opacity-[0.15]"
         )}
-      >
-        <div
-          className={cn(
-            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
-            selectingKey && "opacity-[0.15]"
-          )}
-        />
-        <span className="p-1">{index}</span>
-      </div>
+      />
+      <div className="relative flex w-[50%]">
+        <div className="ml-1 flex w-[38px] items-center">
+          <span>{index}</span>
+        </div>
+        <div className="flex w-[40%] items-center">
+          {/* <span className="text-xs text-slate-500">{currentKey.defType}</span>
+          <span className="text-sm text-slate-500">:</span> */}
+          <span className="text-md">{keyStrings.join("\n")}</span>
+          {/* <span className="text-md">{initial}</span> */}
+        </div>
+        <div className={cn("absolute right-1 flex", currentKey.values.length > 1 && "right-[36px]")}>
+          {currentLanguage != mod.defaultLanguage && (
+            <div className="mt-1 flex">
+              <TooltipProvider delayDuration={400}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => {
+                        setShowingDefault((prev) => !prev);
+                      }}
+                    >
+                      {!showingDefault && <BookTemplate />}
+                      {showingDefault && <Book />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>
+                      {!showingDefault && "Show original text"}
+                      {showingDefault && "Show translation"}
+                    </span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
-      <div className="relative flex items-center border-b-[1px] border-[hsl(var(--border))]">
-        <div
-          className={cn(
-            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
-            selectingKey && "opacity-[0.15]"
-          )}
-        />
-        <span className="text-sm text-slate-500">{currentKey.defType}</span>
-        <span className="text-sm text-slate-500">:</span>
-        <span>
-          {currentKey.defName}
-          {currentKey.key}
-        </span>
-      </div>
+              <TooltipProvider delayDuration={400}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => {
+                        if (invalid() || !changedFromDefault || hasNoParent) return;
+                        const defaultKeys = mod.keys.get(mod.defaultLanguage);
+                        const currentKeys = mod.keys.get(currentLanguage);
+                        const defaultText = defaultKey.values[0];
+                        if (!currentKeys || !defaultKeys || !defaultText) return;
 
-      <div className="relative flex flex-row border-b-[1px] border-[hsl(var(--border))]">
-        <div
-          className={cn(
-            "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
-            selectingKey && "opacity-[0.15]"
-          )}
-        />
-        {currentLanguage != mod.defaultLanguage && (
-          <div className="mt-1 flex items-start">
-            <TooltipProvider delayDuration={400}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => {
-                      setShowingDefault((prev) => !prev);
-                    }}
-                  >
-                    {!showingDefault && <BookTemplate />}
-                    {showingDefault && <Book />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>
-                    {!showingDefault && "Show original text"}
-                    {showingDefault && "Show translation"}
-                  </span>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider delayDuration={400}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => {
-                      if (invalid() || !changedFromDefault || hasNoParent) return;
-                      const defaultKeys = mod.keys.get(mod.defaultLanguage);
-                      const currentKeys = mod.keys.get(currentLanguage);
-                      const defaultText = defaultKey.values[0];
-                      if (!currentKeys || !defaultKeys || !defaultText) return;
-
-                      const toDb: DbKey[] = [];
-                      for (const [hash, key] of defaultKeys) {
-                        if (key.values[0] !== defaultText) continue;
-                        const currentText = currentKeys.get(hash)?.values[0];
-                        if (!currentText || currentText === defaultText) {
-                          const copy = {
-                            defType: key.defType,
-                            defName: key.defName,
-                            key: key.key,
-                            values: [...currentKey.values],
-                          };
-                          currentKeys.set(hash, copy);
-                          toDb.push({ modId: mod.id, language: Language[currentLanguage], hash, translationKey: copy });
+                        const toDb: DbKey[] = [];
+                        for (const [hash, key] of defaultKeys) {
+                          if (key.values[0] !== defaultText) continue;
+                          const currentText = currentKeys.get(hash)?.values[0];
+                          if (!currentText || currentText === defaultText) {
+                            const copy = {
+                              defType: key.defType,
+                              defName: key.defName,
+                              key: key.key,
+                              values: [...currentKey.values],
+                            };
+                            currentKeys.set(hash, copy);
+                            toDb.push({
+                              modId: mod.id,
+                              language: Language[currentLanguage],
+                              hash,
+                              translationKey: copy,
+                            });
+                          }
                         }
-                      }
-                      void keysDb.keys.bulkPut(toDb);
+                        void keysDb.keys.bulkPut(toDb);
 
-                      triggerUpdate();
-                    }}
-                  >
-                    <Copy />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>Copy translation to all similar keys</span>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        )}
-
-        <div className="flex w-full">
-          <div className="mt-1 flex flex-col items-start">
-            <TooltipProvider delayDuration={400}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={removeKey}
-                    onMouseEnter={() => {
-                      setSelectingKey(true);
-                    }}
-                    onMouseLeave={() => {
-                      setSelectingKey(false);
-                    }}
-                    onFocus={() => {
-                      setSelectingKey(true);
-                    }}
-                    onBlur={() => {
-                      setSelectingKey(false);
-                    }}
-                  >
-                    <X />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>Remove key</span>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          {showingDefault && (
-            <span className={cn("border-[hsl(var(--border)] w-full border-x-[1px] p-2")}>{defaultKey.values[0]}</span>
+                        triggerUpdate();
+                      }}
+                    >
+                      <Copy />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>Copy translation to all similar keys</span>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           )}
-          {!showingDefault && (
-            <div className="flex w-full flex-col">
-              {values.map((v, i) => {
-                return (
-                  <div
-                    key={v}
-                    className={cn(
-                      "relative",
-                      values.length > 1 && i == 0 && `min-h-[65px]`,
-                      values.length > 1 && i !== 0 && `min-h-[64px]`
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "pointer-events-none absolute h-full w-full bg-red-800 opacity-0 transition-opacity",
-                        selectingValue == i && "opacity-[0.1]"
-                      )}
-                    />
-                    {values.length > 1 && (
-                      <div className="absolute bottom-0 left-[-32px]">
-                        <TooltipProvider delayDuration={400}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                onClick={() => {
-                                  setValues((prev) => {
-                                    prev.splice(i, 1);
-                                    return [...prev];
-                                  });
-                                }}
-                                onMouseEnter={() => {
-                                  setSelectingValue(i);
-                                }}
-                                onMouseLeave={() => {
-                                  setSelectingValue(-1);
-                                }}
-                                onFocus={() => {
-                                  setSelectingValue(i);
-                                }}
-                                onBlur={() => {
-                                  setSelectingValue(-1);
-                                }}
-                              >
-                                <Trash2 />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <span>Remove item</span>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    )}
-                    <AutoHeightTextArea
-                      index={i}
-                      values={values}
-                      onTextChange={(s) => {
-                        setChangedFromDefault(isChangedFromDefault(s));
-                      }}
-                      onFinishEditing={(s) => {
-                        setValues((prev) => {
-                          prev[i] = s ?? "";
-                          return prev;
-                        });
-                        updateTranslationInDb(
-                          mod,
-                          currentLanguage,
-                          `${currentKey.defType}${currentKey.defName}${currentKey.key}`,
-                          values
-                        );
-                        onKeyUpdate();
-                      }}
-                    />
-                  </div>
-                );
-              })}
+
+          {currentKey.values.length <= 1 && (
+            <div className="flex w-full">
+              <div className="mt-1 flex flex-col items-start">
+                <TooltipProvider delayDuration={400}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={removeKey}
+                        onMouseEnter={() => {
+                          setSelectingKey(true);
+                        }}
+                        onMouseLeave={() => {
+                          setSelectingKey(false);
+                        }}
+                        onFocus={() => {
+                          setSelectingKey(true);
+                        }}
+                        onBlur={() => {
+                          setSelectingKey(false);
+                        }}
+                      >
+                        <X />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>Remove key</span>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           )}
         </div>
       </div>
-    </>
+      <div className="flex w-[50%] flex-col">
+        {showingDefault && (
+          <span className={cn("border-[hsl(var(--border)] w-full border-x-[1px] p-2")}>{defaultKey.values[0]}</span>
+        )}
+        {!showingDefault &&
+          currentKey.values.map((text, i) => (
+            <div className="relative h-full" key={`${i}${text}`}>
+              {currentKey.values.length > 1 && (
+                <>
+                  <div
+                    className={cn(
+                      "pointer-events-none absolute z-[5] h-full w-full bg-red-800 opacity-0 transition-opacity",
+                      selectingValue == i && "opacity-[0.15]"
+                    )}
+                  />
+                  <div className="absolute left-[-36px] mt-1">
+                    <TooltipProvider delayDuration={400}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            onClick={() => {
+                              currentKey.values.splice(i, 1);
+                              currentKey.values = [...currentKey.values];
+                              updateTranslationInDb(
+                                mod,
+                                currentLanguage,
+                                `${currentKey.defType}${currentKey.defName}${currentKey.key}`,
+                                currentKey.values
+                              );
+                              onKeyUpdate();
+                            }}
+                            onMouseEnter={() => {
+                              setSelectingValue(i);
+                            }}
+                            onMouseLeave={() => {
+                              setSelectingValue(-1);
+                            }}
+                            onFocus={() => {
+                              setSelectingValue(i);
+                            }}
+                            onBlur={() => {
+                              setSelectingValue(-1);
+                            }}
+                          >
+                            <Trash2 />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <span>Remove item</span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </>
+              )}
+              <AutoHeightTextArea
+                index={i}
+                values={currentKey.values}
+                onTextChange={(s) => {
+                  setChangedFromDefault(isChangedFromDefault(s));
+                }}
+                onFinishEditing={(s) => {
+                  currentKey.values[i] = s ?? "";
+                  updateTranslationInDb(
+                    mod,
+                    currentLanguage,
+                    `${currentKey.defType}${currentKey.defName}${currentKey.key}`,
+                    currentKey.values
+                  );
+                  onKeyUpdate();
+                }}
+              />
+            </div>
+          ))}
+      </div>
+    </div>
   );
 };
 
@@ -335,13 +335,13 @@ enum PageState {
   HasUntranslatedKeys, // red
   HasInvalidKeys, // purple
   HasConflicts, // blue
-  AllTranslated, // default
+  AllTranslated, // green
 }
 
 const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateAction<number>>; states: PageState[] }) => {
   const { page, setPage, states } = props;
   return (
-    <div className="flex flex-row flex-wrap ">
+    <div className="flex flex-row flex-wrap">
       {states.map((state, i) => (
         <button
           key={i}
@@ -416,13 +416,12 @@ const TranslationTableControls = (props: {
     setPageStates(states);
   }, [mod, currentLanguage, defaultLangMap, langMap, langMap.size, keysPerPage]);
 
-  const array = new Array<[string, TranslationKey]>(50);
+  const array = new Array<[string, TranslationKey]>();
 
   let i = 0;
-  let index = 0;
   for (const entry of langMap) {
     if (i >= from) {
-      array[index++] = entry;
+      array.push(entry);
     }
     i++;
     if (i >= to) break;
@@ -436,45 +435,53 @@ const TranslationTableControls = (props: {
         <span>
           {mod.name} @ {Language[currentLanguage]}
         </span>
-        <div className="relative grid w-[80vw] grid-flow-row grid-cols-[36px_2fr_3fr] border-t-[1px] border-[hsl(var(--border))]">
-          {array.map(([hash, key], index) => (
-            <TranslationRow
-              key={`${hash}${currentLanguage}`}
-              currentKey={key}
-              defaultKey={defaultLangMap.get(hash)}
-              index={index + from + 1}
-              mod={mod}
-              removeKey={() => {
-                langMap.delete(hash);
-                removeKeyFromDb(mod, currentLanguage, hash);
-                triggerUpdate();
-              }}
-              onKeyUpdate={() => {
-                const states = pageStates;
-                states[page] = PageState.AllTranslated;
+        {
+          <Virtuoso
+            className="w-[80vw] border-t-[1px] border-[hsl(var(--border))]"
+            useWindowScroll={true}
+            data={array}
+            increaseViewportBy={600}
+            itemContent={(index, [hash, key]) => {
+              return (
+                <TranslationRow
+                  key={`${hash}${currentLanguage}`}
+                  currentKey={key}
+                  defaultKey={defaultLangMap.get(hash)}
+                  index={index + from + 1}
+                  mod={mod}
+                  removeKey={() => {
+                    langMap.delete(hash);
+                    removeKeyFromDb(mod, currentLanguage, hash);
+                    triggerUpdate();
+                  }}
+                  onKeyUpdate={() => {
+                    const states = pageStates;
+                    states[page] = PageState.AllTranslated;
 
-                let i = 0;
-                for (const [hash, key] of langMap) {
-                  if (i >= from) {
-                    if (!defaultLangMap.has(hash)) {
-                      states[page] = Math.min(states[page]!, PageState.HasInvalidKeys);
+                    let i = 0;
+                    for (const [hash, key] of langMap) {
+                      if (i >= from) {
+                        if (!defaultLangMap.has(hash)) {
+                          states[page] = Math.min(states[page]!, PageState.HasInvalidKeys);
+                        }
+                        if (key.values.length !== 1) {
+                          states[page] = Math.min(states[page]!, PageState.HasConflicts);
+                        }
+                        if (key.values.filter((k) => k !== defaultLangMap.get(hash)?.values[0]).length == 0) {
+                          states[page] = Math.min(states[page]!, PageState.HasUntranslatedKeys);
+                        }
+                      }
+                      i++;
+                      if (i >= to) break;
                     }
-                    if (key.values.length !== 1) {
-                      states[page] = Math.min(states[page]!, PageState.HasConflicts);
-                    }
-                    if (key.values.filter((k) => k !== defaultLangMap.get(hash)?.values[0]).length == 0) {
-                      states[page] = Math.min(states[page]!, PageState.HasUntranslatedKeys);
-                    }
-                  }
-                  i++;
-                  if (i >= to) break;
-                }
 
-                setPageStates([...states]);
-              }}
-            />
-          ))}
-        </div>
+                    setPageStates([...states]);
+                  }}
+                />
+              );
+            }}
+          />
+        }
       </div>
 
       <PaginationButtons page={page} setPage={setPage} states={pageStates} />
