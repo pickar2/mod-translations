@@ -309,10 +309,10 @@ const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateActi
             `mb-1 mr-1 flex w-8 cursor-pointer select-none items-center justify-center border-[1px] border-[hsl(var(--border))]
              bg-slate-900 px-2 py-1 text-slate-50 outline-none transition-colors hover:bg-slate-800 focus-visible:bg-slate-800`,
             page == i && "border-b-slate-200",
-            state == PageState.AllTranslated && "border-t-green-600",
-            state == PageState.HasConflicts && "border-t-blue-600",
-            state == PageState.HasInvalidKeys && "border-t-purple-600",
-            state == PageState.HasUntranslatedKeys && "border-t-red-600"
+            state == PageState.AllTranslated && "border-t-green-700",
+            state == PageState.HasConflicts && "border-t-blue-700",
+            state == PageState.HasInvalidKeys && "border-t-purple-700",
+            state == PageState.HasUntranslatedKeys && "border-t-red-700"
           )}
           onClick={() => {
             setPage(i);
