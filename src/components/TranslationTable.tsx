@@ -1,10 +1,10 @@
 import React, { useContext, type Dispatch, type SetStateAction, createRef, useState, useEffect } from "react";
 import { type TranslationKey, type Mod, TranslationContext, Language } from "../contexts/TranslationContext";
 import { Button } from "./ui/transparentButton";
-import { X, Trash2, BookTemplate, Book } from "lucide-react";
+import { X, Trash2, BookTemplate, Book, Copy } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { keysDb, removeKeyFromDb, updateTranslationInDb } from "~/utils/db";
+import { DbKey, keysDb, removeKeyFromDb, updateTranslationInDb } from "~/utils/db";
 import { getFromLocalStorage, setToLocalStorage } from "~/utils/localStorageUtils";
 import { useLocalStorage } from "@uidotdev/usehooks";
 
@@ -80,7 +80,7 @@ const TranslationRow = (props: {
   onKeyUpdate: { (): void };
 }) => {
   const { currentKey, index, mod, removeKey, onKeyUpdate } = props;
-  const { currentLanguage } = useContext(TranslationContext);
+  const { currentLanguage, triggerUpdate } = useContext(TranslationContext);
   const defaultKey = props.defaultKey || props.currentKey;
   const hasNoParent = props.defaultKey === undefined;
 
@@ -169,6 +169,46 @@ const TranslationRow = (props: {
                     {!showingDefault && "Show original text"}
                     {showingDefault && "Show translation"}
                   </span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider delayDuration={400}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => {
+                      if (invalid() || !changedFromDefault || hasNoParent) return;
+                      const defaultKeys = mod.keys.get(mod.defaultLanguage);
+                      const currentKeys = mod.keys.get(currentLanguage);
+                      const defaultText = defaultKey.values[0];
+                      if (!currentKeys || !defaultKeys || !defaultText) return;
+
+                      const toDb: DbKey[] = [];
+                      for (const [hash, key] of defaultKeys) {
+                        if (key.values[0] !== defaultText) continue;
+                        const currentText = currentKeys.get(hash)?.values[0];
+                        if (!currentText || currentText === defaultText) {
+                          const copy = {
+                            defType: key.defType,
+                            defName: key.defName,
+                            key: key.key,
+                            values: [...currentKey.values],
+                          };
+                          currentKeys.set(hash, copy);
+                          toDb.push({ modId: mod.id, language: Language[currentLanguage], hash, translationKey: copy });
+                        }
+                      }
+                      void keysDb.keys.bulkPut(toDb);
+
+                      triggerUpdate();
+                    }}
+                  >
+                    <Copy />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>Copy translation to all similar keys</span>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
