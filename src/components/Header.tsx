@@ -6,13 +6,21 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { cn } from "~/lib/utils";
 import { compileTranslations } from "~/utils/zipUtils";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
-import { clearLanguageInDb, removeKeyFromDb, removeModFromDb, updateTranslationInDb } from "~/utils/db";
+import { DbKey, clearLanguageInDb, keysDb, removeKeyFromDb, removeModFromDb, updateTranslationInDb } from "~/utils/db";
 import { getFromLocalStorage, setToLocalStorage } from "~/utils/localStorageUtils";
 import { useLocalStorage } from "@uidotdev/usehooks";
 
 export const Header = () => {
-  const { setCurrentLanguage, currentMod, currentLanguage, triggerUpdate, setCurrentMod, mods, setMods } =
-    useContext(TranslationContext);
+  const {
+    setCurrentLanguage,
+    currentMod,
+    currentLanguage,
+    triggerUpdate,
+    setCurrentMod,
+    mods,
+    setMods,
+    addTranslation,
+  } = useContext(TranslationContext);
 
   const [keysPerPage, setKeysPerPage] = useLocalStorage("keysPerPage", 25);
 
@@ -25,6 +33,7 @@ export const Header = () => {
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const currentKeys = currentMod.keys.get(currentLanguage)!;
+    const toDb: DbKey[] = [];
     for (const [hash, key] of defaultKeys) {
       if (key.values.length !== 1 || currentKeys.has(hash)) continue;
 
@@ -34,8 +43,11 @@ export const Header = () => {
         defName: key.defName,
         values: [...key.values],
       };
+      // addTranslation(currentMod, currentLanguage, key.defType, key.defName, key.key, [...key.values]);
       currentKeys.set(hash, copy);
+      toDb.push({ modId: currentMod.id, language: Language[currentLanguage], hash, translationKey: copy });
     }
+    void keysDb.keys.bulkPut(toDb);
 
     triggerUpdate();
   };

@@ -19,6 +19,12 @@ export class KeysDb extends Dexie {
     this.version(1).stores({
       keys: "++id, hash, translationKey, [modId+language+hash]",
     });
+    this.version(2).stores({
+      keys: "++id, hash, modId, language, [modId+language+hash]",
+    });
+    this.version(3).stores({
+      keys: "++id, hash, modId, language, [modId+language+hash], [modId+language]",
+    });
   }
 }
 
