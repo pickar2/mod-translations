@@ -24,15 +24,20 @@ const Loading = () => {
 };
 
 type Settings = {
-  loadIntoCurrent: boolean;
+  loadIntoCurrentMod: boolean;
+  loadIntoCurrentLanguage: boolean;
   deleteDuplicateMods: boolean;
 };
 
 export const DropZone = () => {
-  const { mods, addMod, addTranslation, triggerUpdate, currentMod } = useContext(TranslationContext);
+  const { mods, addMod, addTranslation, triggerUpdate, currentMod, currentLanguage } = useContext(TranslationContext);
   const [dropping, setDropping] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [settings, setSettings] = useState<Settings>({ loadIntoCurrent: false, deleteDuplicateMods: false });
+  const [settings, setSettings] = useState<Settings>({
+    loadIntoCurrentMod: false,
+    loadIntoCurrentLanguage: false,
+    deleteDuplicateMods: false,
+  });
 
   async function processDrop(e: React.DragEvent<HTMLElement>) {
     e.preventDefault();
@@ -44,16 +49,17 @@ export const DropZone = () => {
     const modDirectories = await findRimworldMods(root, "default");
     const modsWithDir: { mod: Mod; directory: Directory }[] = modDirectories.map((mDir) => {
       let mod = mods.find((m) => m.id === mDir.modId);
-      if (!mod) mod = (settings.loadIntoCurrent && currentMod) || addMod(mDir.modId, mDir.modId, Language.English);
+      if (!mod) mod = (settings.loadIntoCurrentMod && currentMod) || addMod(mDir.modId, mDir.modId, Language.English);
       return { mod: mod, directory: mDir.directory };
     });
 
-    if (modsWithDir.length == 0 && currentMod && settings.loadIntoCurrent) {
+    if (modsWithDir.length == 0 && currentMod && settings.loadIntoCurrentMod) {
       modsWithDir.push({ mod: currentMod, directory: root });
     }
 
     for (const modEntry of modsWithDir) {
-      const modOverride = (settings.loadIntoCurrent && currentMod) || modEntry.mod;
+      const modOverride = (settings.loadIntoCurrentMod && currentMod) || modEntry.mod;
+      const languageOverride = (settings.loadIntoCurrentLanguage && currentLanguage) || modEntry.mod.defaultLanguage;
       const parsed = await parseRimworldModDirectory(modOverride, modEntry.directory, "@latest");
       const queue: File[] = [];
 
@@ -66,6 +72,9 @@ export const DropZone = () => {
 
       for (const folder of parsed.foldersWithDefs) {
         addFilesToQueue(folder);
+      }
+      if (queue.length == 0) {
+        addFilesToQueue(modEntry.directory);
       }
       const newTranslationKeys: TranslationKey[] = [];
       for (const file of queue) {
@@ -87,8 +96,12 @@ export const DropZone = () => {
         }
       }
       for (const key of newTranslationKeys) {
-        addTranslation(modOverride, modOverride.defaultLanguage, key.defType, key.defName, key.key, key.values);
+        addTranslation(modOverride, languageOverride, key.defType, key.defName, key.key, key.values);
       }
+
+      // if (parsed.foldersWithDefTranslations.length == 0 && settings.loadIntoCurrentLanguage) {
+      //   parsed.foldersWithDefTranslations.push({ language: currentLanguage, directory: root });
+      // }
 
       for (const folder of parsed.foldersWithDefTranslations) {
         for (const defFolder of folder.directory.directories) {
@@ -126,6 +139,10 @@ export const DropZone = () => {
           }
         }
       }
+
+      // if (parsed.foldersWithKeyedTranslations.length == 0 && settings.loadIntoCurrentLanguage) {
+      //   parsed.foldersWithKeyedTranslations.push({ language: currentLanguage, directory: root });
+      // }
 
       for (const folder of parsed.foldersWithKeyedTranslations) {
         newTranslationKeys.length = 0;
@@ -177,19 +194,31 @@ export const DropZone = () => {
             void processDrop(e);
           }}
         ></div>
-        <div className="absolute right-[-69%] flex flex-col space-y-1">
+        <div className="absolute left-[100%] ml-1 flex w-auto min-w-full flex-col space-y-1">
           <div className="flex items-center space-x-2">
             <Switch
-              id="load-into-current"
+              id="load-into-current-mod"
               onCheckedChange={(state) => {
                 setSettings((prev) => {
-                  prev.loadIntoCurrent = state;
+                  prev.loadIntoCurrentMod = state;
                   return prev;
                 });
               }}
             />
-            <Label htmlFor="load-into-current">Load into current mod</Label>
+            <Label htmlFor="load-into-current-mod">Load into current mod</Label>
           </div>
+          {/* <div className="flex items-center space-x-2">
+            <Switch
+              id="load-into-current-language"
+              onCheckedChange={(state) => {
+                setSettings((prev) => {
+                  prev.loadIntoCurrentLanguage = state;
+                  return prev;
+                });
+              }}
+            />
+            <Label htmlFor="load-into-current-language">Load into current language</Label>
+          </div> */}
           {/* <div className="flex items-center space-x-2">
             <Switch
               id="delete-duplicate-mods"
