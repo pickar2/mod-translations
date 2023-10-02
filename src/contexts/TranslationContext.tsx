@@ -4,9 +4,34 @@ import { keysOfEnum } from "~/utils/enumUtils";
 import { getFromLocalStorage, setToLocalStorage } from "~/utils/localStorageUtils";
 
 export enum Language {
+  Catalan,
+  ChineseSimplified,
+  ChineseTraditional,
+  Czech,
+  Danish,
+  Dutch,
   English,
-  Ukrainian,
+  Estonian,
+  Finnish,
+  French,
+  German,
+  Greek,
+  Hungarian,
+  Italian,
+  Japanese,
+  Korean,
+  Norwegian,
+  Polish,
+  Portuguese,
+  PortugueseBrazilian,
+  Romanian,
   Russian,
+  Slovak,
+  Spanish,
+  SpanishLatin,
+  Swedish,
+  Turkish,
+  Ukrainian,
 }
 
 export type Mod = {

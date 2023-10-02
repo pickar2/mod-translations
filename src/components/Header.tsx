@@ -2,13 +2,23 @@ import { useContext } from "react";
 import { keysOfEnum } from "~/utils/enumUtils";
 import { TranslationContext, Language, type TranslationKey } from "../contexts/TranslationContext";
 import { Button } from "./ui/button";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Button as TransparentButton } from "./ui/transparentButton";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import { cn } from "~/lib/utils";
 import { compileTranslations } from "~/utils/zipUtils";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
 import { DbKey, clearLanguageInDb, keysDb, removeKeyFromDb, removeModFromDb, updateTranslationInDb } from "~/utils/db";
 import { getFromLocalStorage, setToLocalStorage } from "~/utils/localStorageUtils";
 import { useLocalStorage } from "@uidotdev/usehooks";
+import { Pin, PinOff } from "lucide-react";
 
 export const Header = () => {
   const {
@@ -23,6 +33,11 @@ export const Header = () => {
   } = useContext(TranslationContext);
 
   const [keysPerPage, setKeysPerPage] = useLocalStorage("keysPerPage", 25);
+
+  const [pinnedLanguages, setPinnedLanguages] = useLocalStorage<string[]>("pinnedLanguages", [
+    Language[Language.English],
+  ]);
+  const currentLanguagePinned = pinnedLanguages.includes(Language[currentLanguage]);
 
   const copyNotTranslated = () => {
     if (!currentMod || currentLanguage == currentMod.defaultLanguage) return;
@@ -43,7 +58,7 @@ export const Header = () => {
         defName: key.defName,
         values: [...key.values],
       };
-      // addTranslation(currentMod, currentLanguage, key.defType, key.defName, key.key, [...key.values]);
+
       currentKeys.set(hash, copy);
       toDb.push({ modId: currentMod.id, language: Language[currentLanguage], hash, translationKey: copy });
     }
@@ -95,6 +110,7 @@ export const Header = () => {
       const newMods = prev.filter((m) => m !== currentMod);
       removeModFromDb(currentMod);
       setCurrentMod(newMods[newMods.length - 1]);
+      triggerUpdate();
       return newMods;
     });
   };
@@ -149,28 +165,6 @@ export const Header = () => {
       </TooltipProvider>
 
       <Select
-        value={Language[currentLanguage]}
-        onValueChange={(v) => {
-          setCurrentLanguage(() => Language[v as keyof typeof Language] as Language);
-        }}
-      >
-        <SelectTrigger className={cn("w-auto min-w-[180px]")}>
-          <SelectValue placeholder="Choose language" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {keysOfEnum(Language).map((lang) => {
-              return (
-                <SelectItem value={lang} key={lang}>
-                  {lang}
-                </SelectItem>
-              );
-            })}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-
-      <Select
         value={currentMod?.id}
         onValueChange={(v) => {
           const mod = mods.find((m) => m.id === v);
@@ -192,6 +186,74 @@ export const Header = () => {
           </SelectGroup>
         </SelectContent>
       </Select>
+
+      <Select
+        value={Language[currentLanguage]}
+        onValueChange={(v) => {
+          setCurrentLanguage(() => Language[v as keyof typeof Language]);
+        }}
+      >
+        <SelectTrigger className={cn("w-auto min-w-[180px]")}>
+          <SelectValue placeholder="Choose language" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {keysOfEnum(Language)
+              .filter((lang) => pinnedLanguages.includes(lang))
+              .sort()
+              .map((lang) => {
+                return (
+                  <SelectItem value={lang} key={lang}>
+                    {lang}
+                  </SelectItem>
+                );
+              })}
+          </SelectGroup>
+          <SelectSeparator />
+          <SelectGroup>
+            {keysOfEnum(Language)
+              .filter((lang) => !pinnedLanguages.includes(lang))
+              .map((lang) => {
+                return (
+                  <SelectItem value={lang} key={lang}>
+                    {lang}
+                  </SelectItem>
+                );
+              })}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+
+      <TooltipProvider delayDuration={400}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => {
+                if (currentLanguagePinned) {
+                  setPinnedLanguages((prev) => {
+                    prev.splice(prev.indexOf(Language[currentLanguage]), 1);
+                    return [...prev];
+                  });
+                } else {
+                  setPinnedLanguages((prev) => {
+                    prev.push(Language[currentLanguage]);
+                    return [...prev];
+                  });
+                }
+              }}
+            >
+              {!currentLanguagePinned && <Pin />}
+              {currentLanguagePinned && <PinOff />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <span>
+              {!currentLanguagePinned && "Pin current language"}
+              {currentLanguagePinned && "Unpin current language"}
+            </span>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       <div className="absolute right-1 flex gap-2">
         <Select value={keysPerPage.toString()} onValueChange={(v) => setKeysPerPage(parseInt(v))}>
