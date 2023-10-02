@@ -1,4 +1,12 @@
-import React, { useContext, type Dispatch, type SetStateAction, createRef, useState, useEffect } from "react";
+import React, {
+  useContext,
+  type Dispatch,
+  type SetStateAction,
+  createRef,
+  useState,
+  useEffect,
+  RefObject,
+} from "react";
 import { type TranslationKey, type Mod, TranslationContext, Language } from "../contexts/TranslationContext";
 import { Button } from "./ui/transparentButton";
 import { X, Trash2, BookTemplate, Book, Copy } from "lucide-react";
@@ -341,12 +349,19 @@ enum PageState {
   HasInvalidKeys, // purple
   HasConflicts, // blue
   AllTranslated, // green
+  NoState,
 }
 
-const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateAction<number>>; states: PageState[] }) => {
-  const { page, setPage, states } = props;
+const PaginationButtons = (props: {
+  page: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  states: PageState[];
+  topDivRef: RefObject<HTMLDivElement>;
+  isTop: boolean;
+}) => {
+  const { page, setPage, states, topDivRef, isTop } = props;
   return (
-    <div className="flex flex-row flex-wrap">
+    <div className="flex flex-row flex-wrap" ref={(isTop && topDivRef) || undefined}>
       {states.map((state, i) => (
         <button
           key={i}
@@ -359,9 +374,11 @@ const PaginationButtons = (props: { page: number; setPage: Dispatch<SetStateActi
             state == PageState.HasInvalidKeys && "border-t-purple-700",
             state == PageState.HasUntranslatedKeys && "border-t-red-700"
           )}
-          onClick={() => {
+          onClick={(e) => {
             setPage(i);
-            window.scrollTo(0, 0);
+            console.log(topDivRef.current);
+            const offset: number = topDivRef.current?.offsetTop || 0;
+            window.scrollTo(0, offset - 75);
           }}
         >
           {i + 1}
@@ -432,9 +449,10 @@ const TranslationTableControls = (props: {
     if (i >= to) break;
   }
 
+  const topDiv = React.createRef<HTMLDivElement>();
   return (
     <>
-      <PaginationButtons page={page} setPage={setPage} states={pageStates} />
+      <PaginationButtons page={page} setPage={setPage} states={pageStates} topDivRef={topDiv} isTop={true} />
 
       <div className="flex flex-col content-center items-center bg-slate-900 text-slate-50">
         <span>
@@ -489,7 +507,7 @@ const TranslationTableControls = (props: {
         }
       </div>
 
-      <PaginationButtons page={page} setPage={setPage} states={pageStates} />
+      <PaginationButtons page={page} setPage={setPage} states={pageStates} topDivRef={topDiv} isTop={false} />
     </>
   );
 };
