@@ -105,12 +105,13 @@ const TranslationRow = (props: {
 }) => {
   const { currentKey, index, mod, removeKey, onKeyUpdate } = props;
   const { currentLanguage, triggerUpdate } = useContext(TranslationContext);
+  const isDefaultLang = currentLanguage == mod.defaultLanguage;
   const defaultKey = props.defaultKey || props.currentKey;
   const hasNoParent = props.defaultKey === undefined;
 
   const invalid = () => currentKey.values.length > 1;
   function isChangedFromDefault(currentValue: string | undefined): boolean {
-    if (currentLanguage == mod.defaultLanguage || invalid()) return false;
+    if (isDefaultLang || invalid()) return false;
     return currentValue !== defaultKey.values[0];
   }
 
@@ -141,7 +142,8 @@ const TranslationRow = (props: {
   return (
     <div
       className={cn(
-        "relative flex border-b-[1px] border-l-[1px] border-b-[hsl(var(--border))] border-l-red-600",
+        "relative flex border-b-[1px] border-l-[1px] border-b-[hsl(var(--border))]",
+        !isDefaultLang && "border-l-red-600",
         invalid() && "border-l-blue-600",
         changedFromDefault && "border-l-green-600",
         hasNoParent && "border-l-purple-600"
@@ -374,10 +376,9 @@ const PaginationButtons = (props: {
             state == PageState.HasInvalidKeys && "border-t-purple-700",
             state == PageState.HasUntranslatedKeys && "border-t-red-700"
           )}
-          onClick={(e) => {
+          onClick={() => {
             setPage(i);
-            console.log(topDivRef.current);
-            const offset: number = topDivRef.current?.offsetTop || 0;
+            const offset: number = topDivRef.current?.offsetTop || 75;
             window.scrollTo(0, offset - 75);
           }}
         >
@@ -416,7 +417,9 @@ const TranslationTableControls = (props: {
   }, [startPage]);
 
   useEffect(() => {
-    const states = new Array<PageState>(Math.ceil(langMap.size / keysPerPage)).fill(PageState.AllTranslated);
+    const isDefaultLang = currentLanguage == mod.defaultLanguage;
+    const initialState = (isDefaultLang && PageState.NoState) || PageState.AllTranslated;
+    const states = new Array<PageState>(Math.ceil(langMap.size / keysPerPage)).fill(initialState);
     let currentPage = 0;
     let i = 0;
     for (const [hash, key] of langMap) {
@@ -426,7 +429,7 @@ const TranslationTableControls = (props: {
       if (key.values.length !== 1) {
         states[currentPage] = Math.min(states[currentPage]!, PageState.HasConflicts);
       }
-      if (key.values.filter((k) => k !== defaultLangMap.get(hash)?.values[0]).length == 0) {
+      if (!isDefaultLang && key.values.filter((k) => k !== defaultLangMap.get(hash)?.values[0]).length == 0) {
         states[currentPage] = Math.min(states[currentPage]!, PageState.HasUntranslatedKeys);
       }
 
