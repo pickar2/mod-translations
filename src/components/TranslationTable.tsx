@@ -482,7 +482,9 @@ const TranslationTableControls = (props: {
                   }}
                   onKeyUpdate={() => {
                     const states = pageStates;
-                    states[page] = PageState.AllTranslated;
+                    const isDefaultLang = currentLanguage == mod.defaultLanguage;
+                    const initialState = (isDefaultLang && PageState.NoState) || PageState.AllTranslated;
+                    states[page] = initialState;
 
                     let i = 0;
                     for (const [hash, key] of langMap) {
@@ -493,7 +495,10 @@ const TranslationTableControls = (props: {
                         if (key.values.length !== 1) {
                           states[page] = Math.min(states[page]!, PageState.HasConflicts);
                         }
-                        if (key.values.filter((k) => k !== defaultLangMap.get(hash)?.values[0]).length == 0) {
+                        if (
+                          !isDefaultLang &&
+                          key.values.filter((k) => k !== defaultLangMap.get(hash)?.values[0]).length == 0
+                        ) {
                           states[page] = Math.min(states[page]!, PageState.HasUntranslatedKeys);
                         }
                       }
