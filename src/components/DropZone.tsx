@@ -48,6 +48,10 @@ export const DropZone = () => {
       return { mod: mod, directory: mDir.directory };
     });
 
+    if (modsWithDir.length == 0 && currentMod && settings.loadIntoCurrent) {
+      modsWithDir.push({ mod: currentMod, directory: root });
+    }
+
     for (const modEntry of modsWithDir) {
       const modOverride = (settings.loadIntoCurrent && currentMod) || modEntry.mod;
       const parsed = await parseRimworldModDirectory(modOverride, modEntry.directory, "@latest");

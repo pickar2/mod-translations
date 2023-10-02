@@ -98,6 +98,11 @@ export const TranslationContextInit = (props: { children: JSX.Element | JSX.Elem
         if (translationKey.values.find((v) => v === value)) continue;
         translationKey.values.push(value);
       }
+      const defaultText = mod.keys.get(mod.defaultLanguage)?.get(hash)?.values[0];
+      if (defaultText) {
+        const filtered = translationKey.values.filter((v) => v !== defaultText);
+        if (filtered.length > 0) translationKey.values = filtered;
+      }
       if (!fromDb) updateTranslationInDb(mod, language, hash, translationKey.values);
     }
   };

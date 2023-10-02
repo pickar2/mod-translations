@@ -439,7 +439,7 @@ const TranslationTableControls = (props: {
       }
     }
     setPageStates(states);
-  }, [mod, currentLanguage, defaultLangMap, langMap, langMap.size, keysPerPage]);
+  }, [mod, currentLanguage, defaultLangMap, langMap, langMap.size, keysPerPage, updateOnTrigger]);
 
   const array = new Array<[string, TranslationKey]>();
 
