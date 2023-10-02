@@ -29,11 +29,21 @@ const AutoHeightTextArea = (props: {
     element.style.height = newHeight;
   }
 
-  // TODO: update height on table width change
   useEffect((): void => {
     updateHeight(textAreaRef.current);
     onTextChange(textAreaRef.current?.value);
   }, []);
+
+  const updateWindowWidth = () => {
+    updateHeight(textAreaRef.current);
+  };
+
+  useEffect(() => {
+    window.addEventListener("resize", updateWindowWidth);
+    return () => {
+      window.removeEventListener("resize", updateWindowWidth);
+    };
+  }, [textAreaRef]);
 
   return (
     <Waypoint onEnter={() => updateHeight(textAreaRef.current)}>
@@ -60,16 +70,14 @@ const AutoHeightTextArea = (props: {
           onFocus={(e) => {
             updateHeight(e.currentTarget);
             setEditingIndex(index);
-            // onUpdate(e.currentTarget.value);
           }}
           onBlur={(e) => {
             setEditingIndex(-1);
             onFinishEditing(e.currentTarget.value);
-            // onUpdate(e.currentTarget.value);
           }}
-          // onMouseEnter={(e) => {
-          //   updateHeight(e.currentTarget);
-          // }}
+          onMouseEnter={(e) => {
+            updateHeight(e.currentTarget);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Escape") e.currentTarget.blur();
           }}
@@ -142,10 +150,7 @@ const TranslationRow = (props: {
           <span>{index}</span>
         </div>
         <div className="flex w-[40%] items-center">
-          {/* <span className="text-xs text-slate-500">{currentKey.defType}</span>
-          <span className="text-sm text-slate-500">:</span> */}
           <span className="text-md">{keyStrings.join("\n")}</span>
-          {/* <span className="text-md">{initial}</span> */}
         </div>
         <div className={cn("absolute right-1 flex", currentKey.values.length > 1 && "right-[36px]")}>
           {currentLanguage != mod.defaultLanguage && (
