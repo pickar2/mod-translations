@@ -12,7 +12,7 @@ type FRSettings = {
 };
 
 export const FindReplace = () => {
-  const { currentMod, currentLanguage, triggerUpdate } = useContext(TranslationContext);
+  const { currentMod, currentLanguage, triggerUpdate, onTableUpdated } = useContext(TranslationContext);
   const [changeCount, setChangeCount] = useState(0);
   const [find, setFind] = useState<string[]>([]);
   const [replace, setReplace] = useState<string[]>([]);
@@ -22,11 +22,13 @@ export const FindReplace = () => {
     onlyFullKeys: false,
     onlyUntranslated: false,
   });
+  const [busy, setBusy] = useState(true);
 
   const findDbKeys = () => {
-    const str = find[0];
+    setBusy(true);
+    const findStr = find[0];
     const defaultKeys = currentMod?.keys.get(currentMod.defaultLanguage);
-    if (!currentMod || !str || !defaultKeys) {
+    if (!currentMod || !findStr || !defaultKeys) {
       setDbKeys([]);
       return;
     }
@@ -38,18 +40,54 @@ export const FindReplace = () => {
       );
     }
 
-    if (settings.onlyFullKeys) {
-      req = req.filter((k) => k.translationKey.values.filter((v) => v === str).length > 0);
+    if (settings.useRegex) {
+      if (settings.onlyFullKeys) {
+        req = req.filter(
+          (k) => k.translationKey.values.filter((v) => v.match(new RegExp(findStr, "g"))?.[0] === v).length > 0
+        );
+      } else {
+        req = req.filter((k) => k.translationKey.values.filter((v) => v.match(findStr)).length > 0);
+      }
     } else {
-      req = req.filter((k) => k.translationKey.values.filter((v) => v.includes(str)).length > 0);
+      if (settings.onlyFullKeys) {
+        req = req.filter((k) => k.translationKey.values.filter((v) => v === findStr).length > 0);
+      } else {
+        req = req.filter((k) => k.translationKey.values.filter((v) => v.includes(findStr)).length > 0);
+      }
     }
 
     void req.toArray().then((arr) => {
       setDbKeys(arr);
+      setBusy(arr.length === 0);
     });
   };
 
-  useEffect(findDbKeys, [currentMod, currentLanguage, settings]);
+  const performReplace = () => {
+    const findStr = find[0];
+    const replaceStr = replace[0];
+    const currentKeys = currentMod?.keys.get(currentLanguage);
+    if (!findStr || !replaceStr || !currentKeys) return;
+
+    if (settings.useRegex) {
+      for (const dbKey of dbKeys) {
+        dbKey.translationKey.values = dbKey.translationKey.values.map((v) =>
+          v.replace(new RegExp(findStr, "g"), replaceStr)
+        );
+        currentKeys.set(dbKey.hash, dbKey.translationKey);
+      }
+    } else {
+      for (const dbKey of dbKeys) {
+        dbKey.translationKey.values = dbKey.translationKey.values.map((v) => v.replaceAll(findStr, replaceStr));
+        currentKeys.set(dbKey.hash, dbKey.translationKey);
+      }
+    }
+    void keysDb.keys.bulkPut(dbKeys).then(() => {
+      findDbKeys();
+      triggerUpdate();
+    });
+  };
+
+  useEffect(findDbKeys, [currentMod, currentLanguage, settings, onTableUpdated]);
 
   return (
     <div className="absolute left-8 top-24 flex w-[30vw]">
@@ -84,23 +122,7 @@ export const FindReplace = () => {
         <span>{dbKeys.length} occurrences will be replaced</span>
       </div>
       <div className="ml-2 flex flex-col justify-center gap-2">
-        <Button
-          onClick={() => {
-            const findStr = find[0];
-            const replaceStr = replace[0];
-            const currentKeys = currentMod?.keys.get(currentLanguage);
-            if (!findStr || !replaceStr || !currentKeys) return;
-
-            for (const dbKey of dbKeys) {
-              dbKey.translationKey.values = dbKey.translationKey.values.map((v) => v.replaceAll(findStr, replaceStr));
-              currentKeys.set(dbKey.hash, dbKey.translationKey);
-            }
-            void keysDb.keys.bulkPut(dbKeys).then(() => {
-              findDbKeys();
-              triggerUpdate();
-            });
-          }}
-        >
+        <Button onClick={performReplace} disabled={busy}>
           Replace
         </Button>
         <div className="flex items-center gap-1">
@@ -146,7 +168,6 @@ export const FindReplace = () => {
                 return { ...prev };
               });
             }}
-            disabled
           />
           <label
             htmlFor="use_regex"

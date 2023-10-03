@@ -19,7 +19,7 @@ const TranslationRow = (props: {
   onKeyUpdate: { (): void };
 }) => {
   const { currentKey, index, mod, removeKey, onKeyUpdate } = props;
-  const { currentLanguage, triggerUpdate } = useContext(TranslationContext);
+  const { currentLanguage, triggerUpdate, triggerTableUpdate } = useContext(TranslationContext);
   const isDefaultLang = currentLanguage == mod.defaultLanguage;
   const defaultKey = props.defaultKey || props.currentKey;
   const hasNoParent = props.defaultKey === undefined;
@@ -100,51 +100,6 @@ const TranslationRow = (props: {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-
-              {/* <TooltipProvider delayDuration={400}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => {
-                        if (invalid() || !changedFromDefault || hasNoParent) return;
-                        const defaultKeys = mod.keys.get(mod.defaultLanguage);
-                        const currentKeys = mod.keys.get(currentLanguage);
-                        const defaultText = defaultKey.values[0];
-                        if (!currentKeys || !defaultKeys || !defaultText) return;
-
-                        const toDb: DbKey[] = [];
-                        for (const [hash, key] of defaultKeys) {
-                          if (key.values[0] !== defaultText) continue;
-                          const currentText = currentKeys.get(hash)?.values[0];
-                          if (!currentText || currentText === defaultText) {
-                            const copy = {
-                              defType: key.defType,
-                              defName: key.defName,
-                              key: key.key,
-                              values: [...currentKey.values],
-                            };
-                            currentKeys.set(hash, copy);
-                            toDb.push({
-                              modId: mod.id,
-                              language: Language[currentLanguage],
-                              hash,
-                              translationKey: copy,
-                            });
-                          }
-                        }
-                        void keysDb.keys.bulkPut(toDb);
-
-                        triggerUpdate();
-                      }}
-                    >
-                      <Copy />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <span>Copy translation to all similar keys</span>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider> */}
             </div>
           )}
 
@@ -212,6 +167,7 @@ const TranslationRow = (props: {
                                 currentKey.values
                               );
                               onKeyUpdate();
+                              triggerTableUpdate();
                             }}
                             onMouseEnter={() => {
                               setSelectingValue(i);
@@ -252,6 +208,7 @@ const TranslationRow = (props: {
                     currentKey.values
                   );
                   onKeyUpdate();
+                  triggerTableUpdate();
                 }}
                 placeholder="Translation"
               />
