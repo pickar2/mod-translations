@@ -19,6 +19,7 @@ import { TranslationContextInit } from "~/contexts/TranslationContext";
 import { cn } from "~/lib/utils";
 import { api } from "~/utils/api";
 import NoSsr from "~/components/NoSsr";
+import { FindReplace } from "~/components/FindReplace";
 
 const Home: NextPage = () => {
   // const hello = api.example.hello.useQuery({ text: "from tRPC" });
@@ -53,6 +54,7 @@ const Home: NextPage = () => {
           onDrop={verifyZoneOnFileDrop}
         >
           <div className="container mt-8 flex flex-col items-center justify-center gap-12 px-4 py-16">
+            <FindReplace />
             <DropZone />
             <TranslationTable />
             {/* <div className="flex flex-col items-center gap-2">

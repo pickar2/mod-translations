@@ -1,12 +1,4 @@
-import React, {
-  useContext,
-  type Dispatch,
-  type SetStateAction,
-  createRef,
-  useState,
-  useEffect,
-  RefObject,
-} from "react";
+import React, { useContext, type Dispatch, type SetStateAction, useState, useEffect, RefObject } from "react";
 import { type TranslationKey, type Mod, TranslationContext, Language } from "../contexts/TranslationContext";
 import { Button } from "./ui/transparentButton";
 import { X, Trash2, BookTemplate, Book, Copy } from "lucide-react";
@@ -16,84 +8,7 @@ import { DbKey, keysDb, removeKeyFromDb, updateTranslationInDb } from "~/utils/d
 import { getFromLocalStorage, setToLocalStorage } from "~/utils/localStorageUtils";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { Virtuoso, Components } from "react-virtuoso";
-import { Waypoint } from "react-waypoint";
-
-const AutoHeightTextArea = (props: {
-  index: number;
-  values: string[];
-  onTextChange: (value: string | undefined) => void;
-  onFinishEditing: (value: string | undefined) => void;
-}) => {
-  const { index, values, onFinishEditing, onTextChange } = props;
-  const textAreaRef = createRef<HTMLTextAreaElement>();
-  const defaultHeight = "40px";
-  const [editingIndex, setEditingIndex] = useState<number>(-1);
-
-  function updateHeight(element: HTMLTextAreaElement | null): void {
-    if (!element) return;
-
-    element.style.height = defaultHeight;
-    const newHeight = `${element.scrollHeight}px`;
-    element.style.height = newHeight;
-  }
-
-  useEffect((): void => {
-    updateHeight(textAreaRef.current);
-    onTextChange(textAreaRef.current?.value);
-  }, []);
-
-  const updateWindowWidth = () => {
-    updateHeight(textAreaRef.current);
-  };
-
-  useEffect(() => {
-    window.addEventListener("resize", updateWindowWidth);
-    return () => {
-      window.removeEventListener("resize", updateWindowWidth);
-    };
-  }, [textAreaRef]);
-
-  return (
-    <Waypoint onEnter={() => updateHeight(textAreaRef.current)}>
-      <div
-        className={cn(
-          "transition-border flex h-full w-full items-center border-x-[1px]  border-[hsl(var(--border))]",
-          index != values.length - 1 && "border-b-[1px]",
-          editingIndex == index && "border-x-slate-200"
-        )}
-      >
-        <textarea
-          ref={textAreaRef}
-          className={`flex w-full resize-none items-center overflow-hidden bg-slate-900 p-2 outline-none transition-colors hover:bg-slate-800 focus:bg-slate-800 `}
-          style={{ height: defaultHeight }}
-          placeholder="Translation"
-          wrap="soft"
-          defaultValue={values[index]}
-          rows={1}
-          spellCheck={false}
-          onChange={(e) => {
-            updateHeight(e.currentTarget);
-            onTextChange(e.currentTarget.value);
-          }}
-          onFocus={(e) => {
-            updateHeight(e.currentTarget);
-            setEditingIndex(index);
-          }}
-          onBlur={(e) => {
-            setEditingIndex(-1);
-            onFinishEditing(e.currentTarget.value);
-          }}
-          onMouseEnter={(e) => {
-            updateHeight(e.currentTarget);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") e.currentTarget.blur();
-          }}
-        />
-      </div>
-    </Waypoint>
-  );
-};
+import { AutoHeightTextArea } from "./AutoHeightTextArea";
 
 const TranslationRow = (props: {
   currentKey: TranslationKey;
@@ -338,6 +253,7 @@ const TranslationRow = (props: {
                   );
                   onKeyUpdate();
                 }}
+                placeholder="Translation"
               />
             </div>
           ))}
