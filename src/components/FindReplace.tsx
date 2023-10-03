@@ -43,7 +43,8 @@ export const FindReplace = () => {
     if (settings.useRegex) {
       if (settings.onlyFullKeys) {
         req = req.filter(
-          (k) => k.translationKey.values.filter((v) => v.match(new RegExp(findStr, "g"))?.[0] === v).length > 0
+          (k) =>
+            k.translationKey.values.filter((v) => v.match(new RegExp(findStr, "g"))?.length === v.length).length > 0
         );
       } else {
         req = req.filter((k) => k.translationKey.values.filter((v) => v.match(findStr)).length > 0);
