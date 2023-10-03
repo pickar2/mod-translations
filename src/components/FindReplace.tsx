@@ -1,8 +1,12 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AutoHeightTextArea } from "./AutoHeightTextArea";
 import { Button } from "./ui/button";
 import { Language, TranslationContext } from "~/contexts/TranslationContext";
 import { DbKey, keysDb } from "~/utils/db";
+
+// const type FRSettings {
+
+// }
 
 export const FindReplace = () => {
   const { currentMod, currentLanguage, triggerUpdate } = useContext(TranslationContext);
@@ -13,7 +17,10 @@ export const FindReplace = () => {
 
   const findDbKeys = () => {
     const str = find[0];
-    if (!currentMod || !str) return;
+    if (!currentMod || !str) {
+      setDbKeys([]);
+      return;
+    }
     void keysDb.keys
       .where({ modId: currentMod.id, language: Language[currentLanguage] })
       .filter((k) => k.translationKey.values.filter((v) => v.includes(str)).length > 0)
@@ -22,6 +29,8 @@ export const FindReplace = () => {
         setDbKeys(arr);
       });
   };
+
+  useEffect(findDbKeys, [currentMod, currentLanguage]);
 
   return (
     <div className="absolute left-8 top-24 flex w-[20vw]">

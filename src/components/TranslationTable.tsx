@@ -101,7 +101,7 @@ const TranslationRow = (props: {
                 </Tooltip>
               </TooltipProvider>
 
-              <TooltipProvider delayDuration={400}>
+              {/* <TooltipProvider delayDuration={400}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -144,7 +144,7 @@ const TranslationRow = (props: {
                     <span>Copy translation to all similar keys</span>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider>
+              </TooltipProvider> */}
             </div>
           )}
 

@@ -55,7 +55,7 @@ export const AutoHeightTextArea = (props: {
           wrap="soft"
           defaultValue={values[index]}
           rows={1}
-          spellCheck={false}
+          spellCheck={true}
           onChange={(e) => {
             updateHeight(e.currentTarget);
             onTextChange(e.currentTarget.value);
