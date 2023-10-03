@@ -43,6 +43,7 @@ export function compileTranslations(mod: Mod) {
 
   for (const [language, keyMap] of mod.keys) {
     if (language === mod.defaultLanguage) continue;
+    if (keyMap.size == 0) continue;
 
     const langName: string = Language[language];
     const langFolder = languagesFolder.folder(langName)!;
