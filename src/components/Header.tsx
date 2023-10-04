@@ -19,6 +19,7 @@ import { DbKey, clearLanguageInDb, keysDb, removeKeyFromDb, removeModFromDb, upd
 import { getFromLocalStorage, setToLocalStorage } from "~/utils/localStorageUtils";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { Pin, PinOff } from "lucide-react";
+import { FindReplace } from "~/components/FindReplace";
 
 export const Header = () => {
   const {
@@ -124,6 +125,7 @@ export const Header = () => {
 
   return (
     <header className="fixed top-0 z-10 flex w-full flex-row gap-2 border-b-[1px] border-[hsl(var(--border))] bg-slate-900 p-3">
+      <FindReplace />
       <TooltipProvider delayDuration={400}>
         <Tooltip>
           <TooltipTrigger asChild>

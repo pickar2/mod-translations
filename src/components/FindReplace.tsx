@@ -9,11 +9,11 @@ type FRSettings = {
   useRegex: boolean;
   onlyFullKeys: boolean;
   onlyUntranslated: boolean;
+  ignoreCase: boolean;
 };
 
 export const FindReplace = () => {
   const { currentMod, currentLanguage, triggerUpdate, onTableUpdated } = useContext(TranslationContext);
-  const [changeCount, setChangeCount] = useState(0);
   const [find, setFind] = useState<string[]>([]);
   const [replace, setReplace] = useState<string[]>([]);
   const [dbKeys, setDbKeys] = useState<DbKey[]>([]);
@@ -21,6 +21,7 @@ export const FindReplace = () => {
     useRegex: false,
     onlyFullKeys: false,
     onlyUntranslated: false,
+    ignoreCase: false,
   });
   const [busy, setBusy] = useState(true);
 
@@ -41,19 +42,30 @@ export const FindReplace = () => {
     }
 
     if (settings.useRegex) {
+      const regex = new RegExp(findStr, settings.ignoreCase ? "gi" : "g");
       if (settings.onlyFullKeys) {
         req = req.filter(
-          (k) =>
-            k.translationKey.values.filter((v) => v.match(new RegExp(findStr, "g"))?.length === v.length).length > 0
+          (k) => k.translationKey.values.filter((v) => v.match(regex)?.[0].length === v.length).length > 0
         );
       } else {
         req = req.filter((k) => k.translationKey.values.filter((v) => v.match(findStr)).length > 0);
       }
     } else {
-      if (settings.onlyFullKeys) {
-        req = req.filter((k) => k.translationKey.values.filter((v) => v === findStr).length > 0);
+      const match = settings.ignoreCase ? findStr.toLocaleLowerCase() : findStr;
+      if (settings.ignoreCase) {
+        if (settings.onlyFullKeys) {
+          req = req.filter((k) => k.translationKey.values.filter((v) => v.toLocaleLowerCase() === match).length > 0);
+        } else {
+          req = req.filter(
+            (k) => k.translationKey.values.filter((v) => v.toLocaleLowerCase().includes(findStr)).length > 0
+          );
+        }
       } else {
-        req = req.filter((k) => k.translationKey.values.filter((v) => v.includes(findStr)).length > 0);
+        if (settings.onlyFullKeys) {
+          req = req.filter((k) => k.translationKey.values.filter((v) => v === match).length > 0);
+        } else {
+          req = req.filter((k) => k.translationKey.values.filter((v) => v.includes(findStr)).length > 0);
+        }
       }
     }
 
@@ -69,19 +81,12 @@ export const FindReplace = () => {
     const currentKeys = currentMod?.keys.get(currentLanguage);
     if (!findStr || !replaceStr || !currentKeys) return;
 
-    if (settings.useRegex) {
-      for (const dbKey of dbKeys) {
-        dbKey.translationKey.values = dbKey.translationKey.values.map((v) =>
-          v.replace(new RegExp(findStr, "g"), replaceStr)
-        );
-        currentKeys.set(dbKey.hash, dbKey.translationKey);
-      }
-    } else {
-      for (const dbKey of dbKeys) {
-        dbKey.translationKey.values = dbKey.translationKey.values.map((v) => v.replaceAll(findStr, replaceStr));
-        currentKeys.set(dbKey.hash, dbKey.translationKey);
-      }
+    const regex = new RegExp(findStr, settings.ignoreCase ? "gi" : "g");
+    for (const dbKey of dbKeys) {
+      dbKey.translationKey.values = dbKey.translationKey.values.map((v) => v.replaceAll(regex, replaceStr));
+      currentKeys.set(dbKey.hash, dbKey.translationKey);
     }
+
     void keysDb.keys.bulkPut(dbKeys).then(() => {
       findDbKeys();
       triggerUpdate();
@@ -91,7 +96,7 @@ export const FindReplace = () => {
   useEffect(findDbKeys, [currentMod, currentLanguage, settings, onTableUpdated]);
 
   return (
-    <div className="absolute left-8 top-24 flex w-[30vw]">
+    <div className="absolute left-8 top-[64px] z-30 flex w-[23vw] bg-[hsl(var(--background))]">
       <div className="flex w-[240px] flex-col">
         <div className="border-y-[1px] border-[hsl(var(--border))]">
           <AutoHeightTextArea
@@ -120,7 +125,7 @@ export const FindReplace = () => {
             placeholder="Replace"
           />
         </div>
-        <span>{dbKeys.length} occurrences will be replaced</span>
+        <span>{dbKeys.length} rows will be affected</span>
       </div>
       <div className="ml-2 flex flex-col justify-center gap-2">
         <Button onClick={performReplace} disabled={busy}>
@@ -158,6 +163,23 @@ export const FindReplace = () => {
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             Only full keys
+          </label>
+        </div>
+        <div className="flex items-center gap-1">
+          <Checkbox
+            id="ignore_case"
+            onCheckedChange={(state) => {
+              setSettings((prev) => {
+                prev.ignoreCase = state == true;
+                return { ...prev };
+              });
+            }}
+          />
+          <label
+            htmlFor="ignore_case"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Ignore case
           </label>
         </div>
         <div className="flex items-center gap-1">
