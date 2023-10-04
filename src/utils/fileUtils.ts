@@ -52,6 +52,11 @@ export async function parseRimworldModDirectory(mod: Mod, directory: Directory, 
   // find folders with defs
   const foldersWithDefs: Directory[] = [];
 
+  const rootDefsFolder = directory.directories.find((d) => d.name === "Defs");
+  if (rootDefsFolder) {
+    foldersWithDefs.push(rootDefsFolder);
+  }
+
   let parsed = false;
   const loadOrderFile = directory.files.find((f) => f.name === "LoadOrder.xml" || f.name === "LoadFolders.xml");
   if (loadOrderFile) {

@@ -257,7 +257,7 @@ export const Header = () => {
           </Tooltip>
         </TooltipProvider>
 
-        <div className="flex gap-2 self-end">
+        <div className="flex justify-end gap-2">
           <Select value={keysPerPage.toString()} onValueChange={(v) => setKeysPerPage(parseInt(v))}>
             <SelectTrigger className={cn("w-auto")}>
               <span className="mr-1">{"Keys per page:"}</span>
@@ -290,7 +290,9 @@ export const Header = () => {
           <TooltipProvider delayDuration={400}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button onClick={deleteCurrentMod}>[ Delete mod ]</Button>
+                <Button className="self-end" onClick={deleteCurrentMod}>
+                  [ Delete mod ]
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" align="start">
                 <span>{"Delete current mod"}</span>
