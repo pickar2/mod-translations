@@ -70,11 +70,11 @@ const TranslationRow = (props: {
           selectingKey && "opacity-[0.15]"
         )}
       />
-      <div className="relative flex w-[50%]">
+      <div className="relative flex min-w-[30%] max-w-[30%]">
         <div className="ml-1 flex w-[38px] items-center">
           <span>{index}</span>
         </div>
-        <div className="flex w-[40%] items-center">
+        <div className="scrollbar-hide flex w-[calc(100%-110px)] items-center overflow-x-scroll">
           <span className="text-md">{keyStrings.join("\n")}</span>
         </div>
         <div className={cn("absolute right-1 flex", currentKey.values.length > 1 && "right-[36px]")}>
@@ -137,7 +137,7 @@ const TranslationRow = (props: {
           )}
         </div>
       </div>
-      <div className="flex w-[50%] flex-col">
+      <div className="flex w-full flex-col">
         {showingDefault && (
           <span className={cn("border-[hsl(var(--border)] w-full border-x-[1px] p-2")}>{defaultKey.values[0]}</span>
         )}

@@ -19,7 +19,6 @@ import { TranslationContextInit } from "~/contexts/TranslationContext";
 import { cn } from "~/lib/utils";
 import { api } from "~/utils/api";
 import NoSsr from "~/components/NoSsr";
-import { FindReplace } from "~/components/FindReplace";
 
 const Home: NextPage = () => {
   // const hello = api.example.hello.useQuery({ text: "from tRPC" });

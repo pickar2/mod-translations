@@ -96,7 +96,7 @@ export const FindReplace = () => {
   useEffect(findDbKeys, [currentMod, currentLanguage, settings, onTableUpdated]);
 
   return (
-    <div className="absolute left-8 top-[64px] z-30 flex w-[23vw] bg-[hsl(var(--background))]">
+    <div className="flex max-w-[32vw]">
       <div className="flex w-[240px] flex-col">
         <div className="border-y-[1px] border-[hsl(var(--border))]">
           <AutoHeightTextArea
