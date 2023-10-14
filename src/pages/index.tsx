@@ -38,9 +38,9 @@ const Home: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Community translations</title>
-        <meta name="description" content="Community translations" />
-        <link rel="icon" href="/favicon.ico" />
+        <title>Mod translations</title>
+        <meta name="description" content="Mod translations" />
+        {/* <link rel="icon" href="/favicon.ico" /> */}
       </Head>
       <TranslationContextInit>
         <NoSsr>

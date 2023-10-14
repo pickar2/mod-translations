@@ -302,7 +302,7 @@ export const Header = () => {
         </div>
       </header>
 
-      <div className="fixed z-30 ml-4 mt-4 flex bg-[hsl(var(--background))]">
+      <div className="fixed z-[5] ml-4 mt-4 flex bg-[hsl(var(--background))] p-2">
         <FindReplace />
       </div>
     </>
