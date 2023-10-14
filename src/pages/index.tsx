@@ -61,6 +61,9 @@ const Home: NextPage = () => {
             </div> */}
           </div>
         </main>
+        <footer className="flex items-center justify-end p-1">
+          <a href="https://github.com/pickar2/mod-translations">Source code</a>
+        </footer>
       </TranslationContextInit>
     </>
   );

@@ -251,8 +251,8 @@ const PaginationButtons = (props: {
           )}
           onClick={() => {
             setPage(i);
-            const offset: number = topDivRef.current?.offsetTop || 75;
-            window.scrollTo(0, offset - 75);
+            // const offset: number = topDivRef.current?.offsetTop || 75;
+            // window.scrollTo(0, offset - 75);
           }}
         >
           {i + 1}
