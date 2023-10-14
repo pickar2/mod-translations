@@ -43,15 +43,15 @@ const Home: NextPage = () => {
         {/* <link rel="icon" href="/favicon.ico" /> */}
       </Head>
       <TranslationContextInit>
-        <NoSsr>
-          <Header />
-        </NoSsr>
         <main
-          className="flex min-h-screen flex-col items-center justify-center bg-slate-900"
+          className="relative flex min-h-screen flex-col items-center justify-center bg-slate-900"
           onDragStart={verifyZoneOnFileDrop}
           onDragOver={verifyZoneOnFileDrop}
           onDrop={verifyZoneOnFileDrop}
         >
+          <NoSsr>
+            <Header />
+          </NoSsr>
           <div className="container mt-8 flex flex-col items-center justify-center gap-12 px-4 py-16">
             <DropZone />
             <TranslationTable />
@@ -60,10 +60,10 @@ const Home: NextPage = () => {
               <AuthShowcase />
             </div> */}
           </div>
+          <div className="flex min-h-full flex-grow-[2] flex-col items-end justify-end p-1">
+            <a href="https://github.com/pickar2/mod-translations">Source code</a>
+          </div>
         </main>
-        <footer className="flex items-center justify-end p-1">
-          <a href="https://github.com/pickar2/mod-translations">Source code</a>
-        </footer>
       </TranslationContextInit>
     </>
   );

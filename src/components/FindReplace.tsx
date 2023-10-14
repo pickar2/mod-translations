@@ -143,7 +143,7 @@ export const FindReplace = () => {
           />
           <label
             htmlFor="only_untranslated"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             Only untranslated
           </label>
@@ -160,7 +160,7 @@ export const FindReplace = () => {
           />
           <label
             htmlFor="only_full_keys"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             Only full keys
           </label>
@@ -177,7 +177,7 @@ export const FindReplace = () => {
           />
           <label
             htmlFor="ignore_case"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             Ignore case
           </label>
@@ -194,7 +194,7 @@ export const FindReplace = () => {
           />
           <label
             htmlFor="use_regex"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             Use regex
           </label>
