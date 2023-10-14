@@ -131,7 +131,7 @@ export const Header = () => {
             <TooltipTrigger asChild>
               <Button onClick={copyNotTranslated}>[ Copy ]</Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" align="start">
+            <TooltipContent className="z-10" side="bottom" align="start">
               <span>{"Copy all non translated keys from default language to current"}</span>
             </TooltipContent>
           </Tooltip>
@@ -142,7 +142,7 @@ export const Header = () => {
             <TooltipTrigger asChild>
               <Button onClick={purgeInvalid}>[ Purge ]</Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" align="start">
+            <TooltipContent className="z-10" side="bottom" align="start">
               <span>{"Purge all invalid keys from current language"}</span>
             </TooltipContent>
           </Tooltip>
@@ -160,7 +160,7 @@ export const Header = () => {
                 [ Save ]
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" align="start">
+            <TooltipContent className="z-10" side="bottom" align="start">
               <span>{"Download current mod's translation"}</span>
             </TooltipContent>
           </Tooltip>
@@ -300,11 +300,11 @@ export const Header = () => {
             </Tooltip>
           </TooltipProvider>
         </div>
-      </header>
 
-      <div className="fixed left-4 top-20 z-[5] flex bg-[hsl(var(--background))] p-2">
-        <FindReplace />
-      </div>
+        <div className="absolute left-4 top-[calc(100%_+_16px)] z-[5] flex bg-[hsl(var(--background))] p-2">
+          <FindReplace />
+        </div>
+      </header>
     </>
   );
 };
